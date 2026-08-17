@@ -74,6 +74,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: development
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     defaults:
       run:
         working-directory: infra/terraform
@@ -95,6 +100,9 @@ jobs:
             -backend-config="container_name=tfstate" \
             -backend-config="key=development.tfstate" \
             -backend-config="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -backend-config="tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
+            -backend-config="client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -backend-config="use_oidc=true" \
             -backend-config="use_azuread_auth=true"
       - name: Plan
         env:
