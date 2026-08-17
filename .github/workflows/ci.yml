@@ -5,6 +5,15 @@ on:
   push:
     branches: [main, platform-foundation]
   workflow_dispatch:
+    inputs:
+      deployment_action:
+        description: Terraform action to run
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
 
 permissions:
   contents: read
@@ -12,7 +21,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
   application:
@@ -61,8 +70,9 @@ jobs:
 
   terraform-plan:
     if: github.event_name == 'workflow_dispatch'
-    needs: terraform-validate
+    needs: [application, terraform-validate]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     environment: development
     defaults:
       run:
@@ -77,11 +87,22 @@ jobs:
       - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.9.8
-      - run: terraform init -backend=false
+      - name: Initialize remote state
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=nordicflow-tfstate-rg" \
+            -backend-config="storage_account_name=nordicflowtfstate969" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=development.tfstate" \
+            -backend-config="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -backend-config="use_azuread_auth=true"
       - name: Plan
         env:
           TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           TF_VAR_environment: dev
           TF_VAR_postgres_administrator_object_id: ${{ secrets.POSTGRES_ADMIN_OBJECT_ID }}
           TF_VAR_postgres_administrator_name: ${{ vars.POSTGRES_ADMIN_NAME }}
-        run: terraform plan -input=false -lock=false -out=tfplan
+        run: terraform plan -input=false -out=tfplan
+      - name: Apply
+        if: inputs.deployment_action == 'apply'
+        run: terraform apply -input=false -auto-approve tfplan
