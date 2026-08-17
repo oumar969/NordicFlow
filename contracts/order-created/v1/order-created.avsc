@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "OrderCreatedV1",
+  "namespace": "com.nordicflow.orders.v1",
+  "doc": "Immutable fact that an order was created. Timestamps are UTC and amounts use minor currency units.",
+  "fields": [
+    {"name": "eventId", "type": {"type": "string", "logicalType": "uuid"}, "doc": "Globally unique idempotency key."},
+    {"name": "eventType", "type": "string", "default": "nordicflow.order.created.v1"},
+    {"name": "schemaVersion", "type": "int", "default": 1},
+    {"name": "occurredAt", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "source", "type": "string", "doc": "Producer identifier, 1-100 characters."},
+    {"name": "tenantId", "type": {"type": "string", "logicalType": "uuid"}},
+    {"name": "correlationId", "type": ["null", {"type": "string", "logicalType": "uuid"}], "default": null},
+    {"name": "data", "type": {
+      "type": "record", "name": "OrderData", "fields": [
+        {"name": "orderId", "type": {"type": "string", "logicalType": "uuid"}},
+        {"name": "orderNumber", "type": "string", "doc": "Tenant-unique, 1-50 characters."},
+        {"name": "customerId", "type": {"type": "string", "logicalType": "uuid"}},
+        {"name": "currency", "type": "string", "doc": "ISO 4217 uppercase code."},
+        {"name": "totalAmountMinor", "type": "long", "doc": "Non-negative monetary amount in minor units."},
+        {"name": "requestedDeliveryDate", "type": ["null", {"type": "int", "logicalType": "date"}], "default": null},
+        {"name": "lines", "type": {"type": "array", "items": {
+          "type": "record", "name": "OrderLine", "fields": [
+            {"name": "lineNumber", "type": "int"},
+            {"name": "sku", "type": "string"},
+            {"name": "quantity", "type": "double"},
+            {"name": "unitPriceMinor", "type": "long"}
+          ]
+        }}}
+      ]
+    }}
+  ]
+}

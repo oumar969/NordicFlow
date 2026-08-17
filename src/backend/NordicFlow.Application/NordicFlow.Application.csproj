@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../NordicFlow.Domain/NordicFlow.Domain.csproj" />
+  </ItemGroup>
+</Project>
+

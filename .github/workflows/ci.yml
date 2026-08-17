@@ -1,0 +1,87 @@
+name: NordicFlow CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Restore
+        run: dotnet restore src/backend/NordicFlow.slnx --configfile NuGet.Config
+      - name: Build
+        run: dotnet build src/backend/NordicFlow.slnx --configuration Release --no-restore
+      - name: Test
+        run: dotnet test src/backend/NordicFlow.slnx --configuration Release --no-build --verbosity normal
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Check Python syntax
+        run: python -m compileall -q data-platform
+      - name: Install PySpark test dependencies
+        run: pip install -r data-platform/requirements-test.txt
+      - name: Run PySpark DataFrame tests
+        run: pytest -q data-platform/tests
+      - name: Build Event Hubs OAuth callback
+        working-directory: data-platform/connectors/eventhubs-oauth
+        run: mvn --batch-mode --no-transfer-progress verify
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  terraform-plan:
+    if: github.event_name != 'pull_request'
+    needs: terraform-validate
+    runs-on: ubuntu-latest
+    environment: development
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - run: terraform init -backend=false
+      - name: Plan
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_environment: dev
+          TF_VAR_postgres_administrator_object_id: ${{ secrets.POSTGRES_ADMIN_OBJECT_ID }}
+          TF_VAR_postgres_administrator_name: ${{ vars.POSTGRES_ADMIN_NAME }}
+        run: terraform plan -input=false -lock=false -out=tfplan

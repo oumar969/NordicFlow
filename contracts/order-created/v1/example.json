@@ -1,0 +1,20 @@
+{
+  "eventId": "f69297c9-7603-4c8b-8988-59bd8b407ee7",
+  "eventType": "nordicflow.order.created.v1",
+  "schemaVersion": 1,
+  "occurredAt": "2026-08-17T09:15:00Z",
+  "source": "erp-dk",
+  "tenantId": "d635537b-a663-4859-9a3e-3f4d51ab80af",
+  "correlationId": "64823913-9f9a-4cf3-b8b7-2d7216e37994",
+  "data": {
+    "orderId": "b3f0fe7d-44ce-4330-a742-a23ade3209d3",
+    "orderNumber": "DK-2026-00421",
+    "customerId": "fe903087-9d82-46b4-b780-55b785b87c69",
+    "currency": "DKK",
+    "totalAmountMinor": 187500,
+    "requestedDeliveryDate": "2026-08-24",
+    "lines": [
+      {"lineNumber": 1, "sku": "NF-PUMP-100", "quantity": 2.0, "unitPriceMinor": 93750}
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="NordicFlow.Domain/NordicFlow.Domain.csproj" />
+    <Project Path="NordicFlow.Application/NordicFlow.Application.csproj" />
+    <Project Path="NordicFlow.Infrastructure/NordicFlow.Infrastructure.csproj" />
+    <Project Path="NordicFlow.WebApi/NordicFlow.WebApi.csproj" />
+    <Project Path="tests/NordicFlow.UnitTests/NordicFlow.UnitTests.csproj" />
+  </Folder>
+</Solution>

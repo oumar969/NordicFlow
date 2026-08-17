@@ -1,0 +1,70 @@
+bundle:
+  name: nordicflow-data-platform
+
+variables:
+  alert_email:
+    description: Distribution list for data-quality incidents
+  catalog:
+    default: nordicflow_dev
+  event_hubs_namespace:
+    description: Event Hubs namespace FQDN without port
+  oauth_callback_jar:
+    description: Workspace or Volume URI of the shaded OAuth callback JAR
+  bronze_checkpoint:
+    description: Durable ADLS/Volume checkpoint path unique to this query
+  spark_version:
+    default: 15.4.x-scala2.12
+  node_type_id:
+    default: Standard_D4ds_v5
+
+resources:
+  jobs:
+    bronze_ingestion:
+      name: NordicFlow Event Hubs to Bronze
+      continuous:
+        pause_status: PAUSED
+      max_concurrent_runs: 1
+      job_clusters:
+        - job_cluster_key: bronze_cluster
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+      tasks:
+        - task_key: ingest_order_events
+          job_cluster_key: bronze_cluster
+          spark_python_task:
+            python_file: ./data-platform/bronze/event_hubs_to_bronze.py
+            parameters:
+              - --event-hubs-namespace
+              - ${var.event_hubs_namespace}
+              - --event-hub-name
+              - order-events
+              - --bronze-table
+              - ${var.catalog}.bronze.order_created_raw
+              - --checkpoint-location
+              - ${var.bronze_checkpoint}
+              - --max-offsets-per-trigger
+              - "10000"
+          libraries:
+            - jar: ${var.oauth_callback_jar}
+    quarantine_monitor:
+      name: NordicFlow quarantine-rate monitor
+      schedule:
+        quartz_cron_expression: "0 0/15 * * * ?"
+        timezone_id: Europe/Berlin
+        pause_status: UNPAUSED
+      email_notifications:
+        on_failure: [${var.alert_email}]
+        no_alert_for_skipped_runs: true
+      tasks:
+        - task_key: monitor_quarantine_rate
+          spark_python_task:
+            python_file: ./data-platform/monitoring/quarantine_rate.py
+            parameters: []
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            client: "4"
