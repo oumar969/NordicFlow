@@ -1,8 +1,9 @@
 # CI/CD configuration
 
 The GitHub Actions workflow runs application build/test, Python syntax checks and
-Terraform formatting/validation on every pull request. `terraform plan` runs only on
-`main` or manual dispatch and is protected by the `development` GitHub Environment.
+Terraform formatting/validation on every pull request and default-branch push.
+`terraform plan` runs only on manual dispatch and is protected by the `development`
+GitHub Environment, because it requires configured Azure OIDC values.
 
 Configure Azure workload-identity federation for GitHub Actions; do not create a
 client secret. Add these environment secrets:
