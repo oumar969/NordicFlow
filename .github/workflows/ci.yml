@@ -3,7 +3,7 @@ name: NordicFlow CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, platform-foundation]
   workflow_dispatch:
 
 permissions:
