@@ -52,12 +52,11 @@ public final class AzureIdentityCallbackHandler implements AuthenticateCallbackH
         credential = null;
     }
 
-    private record AzureOAuthBearerToken(AccessToken token, String scope) implements OAuthBearerToken {
+    private record AzureOAuthBearerToken(AccessToken token, String tokenScope) implements OAuthBearerToken {
         @Override public String value() { return token.getToken(); }
-        @Override public Set<String> scope() { return Collections.singleton(scope); }
+        @Override public Set<String> scope() { return Collections.singleton(tokenScope); }
         @Override public long lifetimeMs() { return token.getExpiresAt().toInstant().toEpochMilli(); }
         @Override public String principalName() { return "azure-workload-identity"; }
         @Override public Long startTimeMs() { return Instant.now().toEpochMilli(); }
     }
 }
-
