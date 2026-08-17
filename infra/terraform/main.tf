@@ -1,9 +1,9 @@
 locals {
   name_prefix = "nf-${var.environment}"
   common_tags = merge(var.tags, {
-    application = "nordicflow"
-    environment = var.environment
-    managed-by  = "terraform"
+    application         = "nordicflow"
+    environment         = var.environment
+    managed-by          = "terraform"
     data-classification = "confidential"
   })
 }
@@ -163,15 +163,15 @@ resource "azurerm_api_management" "this" {
 }
 
 resource "azurerm_api_management_api" "nordicflow" {
-  count               = var.api_origin_url == null ? 0 : 1
-  name                = "nordicflow-api"
-  resource_group_name = azurerm_resource_group.this.name
-  api_management_name = azurerm_api_management.this[0].name
-  revision            = "1"
-  display_name        = "NordicFlow API"
-  path                = "nordicflow"
-  protocols           = ["https"]
-  service_url         = var.api_origin_url
+  count                 = var.api_origin_url == null ? 0 : 1
+  name                  = "nordicflow-api"
+  resource_group_name   = azurerm_resource_group.this.name
+  api_management_name   = azurerm_api_management.this[0].name
+  revision              = "1"
+  display_name          = "NordicFlow API"
+  path                  = "nordicflow"
+  protocols             = ["https"]
+  service_url           = var.api_origin_url
   subscription_required = false
 }
 

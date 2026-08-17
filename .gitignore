@@ -15,4 +15,5 @@ __pycache__/
 .packages/
 .appdata/
 .databricks/
+.tools/
 crash.log
