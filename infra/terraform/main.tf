@@ -241,6 +241,13 @@ resource "azurerm_postgresql_flexible_server_active_directory_administrator" "th
   principal_type      = "Group"
 }
 
+resource "azurerm_postgresql_flexible_server_database" "nordicflow" {
+  name      = "nordicflow"
+  server_id = azurerm_postgresql_flexible_server.this.id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
+}
+
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_storage_account" "lake" {
