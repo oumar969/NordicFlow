@@ -23,11 +23,48 @@ variables:
   postgres_user:
     description: Entra service-principal database role
   azure_service_credential:
-    default: nordicflow-azure-services
+    default: nordicflow-postgres-runtime
     description: Unity Catalog service credential used for Azure token acquisition
+  postgres_bootstrap_user:
+    description: Temporary PostgreSQL Entra administrator role used by the bootstrap job
+  postgres_bootstrap_credential:
+    default: nordicflow-azure-services
+  postgres_runtime_principal_object_id:
+    description: Object ID of the Databricks jobs user-assigned managed identity
 
 resources:
   jobs:
+    postgres_bootstrap:
+      name: NordicFlow PostgreSQL bootstrap
+      max_concurrent_runs: 1
+      job_clusters:
+        - job_cluster_key: bootstrap_cluster
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: 1
+            data_security_mode: SINGLE_USER
+      tasks:
+        - task_key: apply_schema_and_runtime_grants
+          job_cluster_key: bootstrap_cluster
+          spark_python_task:
+            python_file: ./data-platform/database/bootstrap_postgres.py
+            parameters:
+              - --postgres-host
+              - ${var.postgres_host}
+              - --postgres-database
+              - ${var.postgres_database}
+              - --bootstrap-user
+              - ${var.postgres_bootstrap_user}
+              - --bootstrap-credential
+              - ${var.postgres_bootstrap_credential}
+              - --runtime-principal-name
+              - ${var.postgres_user}
+              - --runtime-principal-object-id
+              - ${var.postgres_runtime_principal_object_id}
+          libraries:
+            - pypi:
+                package: psycopg[binary]==3.2.10
     bronze_ingestion:
       name: NordicFlow Event Hubs to Bronze
       continuous:

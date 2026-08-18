@@ -32,9 +32,15 @@ responsible for contract validation and `eventId` deduplication.
 ## Operational metrics serving
 
 Set the bundle variables `postgres_host`, `postgres_database`, and `postgres_user`.
-The job explicitly uses the workspace-bound `nordicflow-azure-services` Unity Catalog
-service credential to acquire its short-lived PostgreSQL token. The job principal
-must have only `ACCESS` on that credential.
+The Silver publisher explicitly uses the workspace-bound `nordicflow-postgres-runtime`
+Unity Catalog service credential to acquire its short-lived PostgreSQL token. The job
+principal must have only `ACCESS` on that credential.
+
+Run `postgres_bootstrap` once before enabling the Silver job. It uses the separate
+`nordicflow-azure-services` bootstrap credential to create the runtime Entra principal,
+apply the canonical backend schema, transfer operational-table ownership to a NOLOGIN
+role, and grant only the required DML permissions. Remove the temporary PostgreSQL
+Entra administrator assignment immediately after a successful bootstrap run.
 The PostgreSQL user must be an Entra database principal representing the Databricks
 workload identity, with INSERT/UPDATE/SELECT permissions limited to
 `data_quality_runs`, `data_lineage_stages`, `data_contract_violations`, `alert_rules`,
