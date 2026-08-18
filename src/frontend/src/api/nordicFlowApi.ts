@@ -36,9 +36,21 @@ export interface DelayedOrder {
   status: "At risk" | "Delayed" | "Monitoring";
 }
 
+export interface InventoryItem {
+  sku: string;
+  productName: string;
+  location: string;
+  availableQuantity: number;
+  reservedQuantity: number;
+  reorderPoint: number;
+  recommendedOrderQuantity: number;
+  updatedAt: string;
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
   getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
+  getInventory(signal?: AbortSignal): Promise<InventoryItem[]>;
 }
 
 export function createNordicFlowApi(
@@ -65,6 +77,14 @@ export function createNordicFlowApi(
       if (!response.ok)
         throw new Error(`Delayed orders request failed (${response.status})`);
       return response.json() as Promise<DelayedOrder[]>;
+    },
+    async getInventory(signal?: AbortSignal): Promise<InventoryItem[]> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/inventory/status`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, signal,
+      });
+      if (!response.ok) throw new Error(`Inventory request failed (${response.status})`);
+      return response.json() as Promise<InventoryItem[]>;
     },
   };
 }

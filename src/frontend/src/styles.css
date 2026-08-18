@@ -83,6 +83,11 @@ td small { color: #94a19d; font-size: 9px; text-transform: uppercase; }
 .status-pill.delayed { color: #983c46; background: #ffebed; }
 .status-pill.at-risk { color: #8c621b; background: #fff1d5; }
 .status-pill.monitoring { color: #31614f; background: #e8f3ee; }
+.status-pill.stock-critical { color: #983c46; background: #ffebed; }
+.status-pill.stock-low { color: #8c621b; background: #fff1d5; }
+.status-pill.stock-healthy { color: #28604a; background: #e4f3eb; }
+.reorder-value { color: #8c621b; font-size: 11px; }
+.no-action { color: #84928d; font-size: 11px; }
 .table-state { padding: 38px !important; color: #7a8984; text-align: center; }
 @keyframes pulse { 50% { opacity: .45; } }
 @media (max-width: 1040px) { .metrics { grid-template-columns: repeat(2, 1fr); } .workspace-grid { grid-template-columns: 1fr; } }
