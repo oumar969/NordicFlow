@@ -58,11 +58,39 @@ export interface PredictionInsight {
   riskFactors: { name: string; contribution: number }[];
 }
 
+export interface DataQualitySnapshot {
+  processedEvents: number;
+  validEvents: number;
+  quarantinedEvents: number;
+  errorRate: number;
+  previousErrorRate: number;
+  contractVersion: string;
+  lastEvaluatedAt: string;
+  lineage: DataLineageStage[];
+  violations: DataContractViolation[];
+}
+
+export interface DataLineageStage {
+  name: string;
+  status: "Healthy" | "Warning" | "Failed";
+  eventCount: number;
+  lastUpdatedAt: string;
+}
+
+export interface DataContractViolation {
+  rule: string;
+  field: string;
+  count: number;
+  severity: "Critical" | "Warning";
+  latestEventId: string;
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
   getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
   getInventory(signal?: AbortSignal): Promise<InventoryItem[]>;
   getPredictions(signal?: AbortSignal): Promise<PredictionInsight[]>;
+  getDataQuality(signal?: AbortSignal): Promise<DataQualitySnapshot>;
 }
 
 export function createNordicFlowApi(
@@ -105,6 +133,14 @@ export function createNordicFlowApi(
       });
       if (!response.ok) throw new Error(`Predictions request failed (${response.status})`);
       return response.json() as Promise<PredictionInsight[]>;
+    },
+    async getDataQuality(signal?: AbortSignal): Promise<DataQualitySnapshot> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/data-quality/summary`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, signal,
+      });
+      if (!response.ok) throw new Error(`Data quality request failed (${response.status})`);
+      return response.json() as Promise<DataQualitySnapshot>;
     },
   };
 }

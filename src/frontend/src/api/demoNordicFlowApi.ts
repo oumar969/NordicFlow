@@ -1,4 +1,4 @@
-import type { DelayedOrder, InventoryItem, NordicFlowApi, PredictionInsight } from "./nordicFlowApi";
+import type { DataQualitySnapshot, DelayedOrder, InventoryItem, NordicFlowApi, PredictionInsight } from "./nordicFlowApi";
 
 const delayedOrders: DelayedOrder[] = [
   { orderId: "75274155-6950-4bc3-bc28-b26f353ed169", orderNumber: "NF-10482", supplierName: "Baltic Components", destination: "Aarhus, DK", requestedDeliveryDate: "2026-08-19", delayProbability: 0.92, predictedDelayDays: 5, status: "Delayed" },
@@ -24,6 +24,28 @@ const predictions: PredictionInsight[] = [
   { orderId: "d559d5a0-8cc6-4bc7-84d3-c700667dcbfb", orderNumber: "NF-10455", delayProbability: 0.71, predictedDelayDays: 2, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T12:20:00Z", dataQualityScore: 0.88, riskFactors: [{ name: "Missing milestone", contribution: 0.32 }, { name: "Historical variance", contribution: 0.21 }, { name: "Carrier performance", contribution: 0.12 }] },
 ];
 
+const dataQuality: DataQualitySnapshot = {
+  processedEvents: 18420,
+  validEvents: 18154,
+  quarantinedEvents: 266,
+  errorRate: 0.0144,
+  previousErrorRate: 0.0081,
+  contractVersion: "order-event.v1.3.0",
+  lastEvaluatedAt: "2026-08-18T12:31:00Z",
+  lineage: [
+    { name: "API ingress", status: "Healthy", eventCount: 18420, lastUpdatedAt: "2026-08-18T12:31:00Z" },
+    { name: "Event Hubs", status: "Healthy", eventCount: 18420, lastUpdatedAt: "2026-08-18T12:31:00Z" },
+    { name: "Bronze", status: "Healthy", eventCount: 18420, lastUpdatedAt: "2026-08-18T12:30:00Z" },
+    { name: "Silver", status: "Warning", eventCount: 18154, lastUpdatedAt: "2026-08-18T12:30:00Z" },
+  ],
+  violations: [
+    { rule: "Required value", field: "supplierId", count: 113, severity: "Critical", latestEventId: "evt-9f5e2c" },
+    { rule: "Valid ISO currency", field: "currency", count: 72, severity: "Warning", latestEventId: "evt-7b41ad" },
+    { rule: "Positive quantity", field: "lines[].quantity", count: 49, severity: "Critical", latestEventId: "evt-661ca0" },
+    { rule: "Valid timestamp", field: "occurredAt", count: 32, severity: "Warning", latestEventId: "evt-3c92fe" },
+  ],
+};
+
 export function createDemoNordicFlowApi(): NordicFlowApi {
   return {
     async getDashboardSummary() {
@@ -37,6 +59,9 @@ export function createDemoNordicFlowApi(): NordicFlowApi {
     },
     async getPredictions() {
       return predictions;
+    },
+    async getDataQuality() {
+      return dataQuality;
     },
   };
 }

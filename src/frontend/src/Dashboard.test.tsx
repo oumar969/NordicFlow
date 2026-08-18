@@ -8,7 +8,7 @@ describe("Dashboard", () => {
     const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockResolvedValue({
       totalOrders: 128, highRiskOrders: 9, lowStockItems: 4,
       averageDelayProbability: 0.37, lastUpdatedAt: "2026-08-18T08:30:00Z",
-    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]) };
+    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn() };
     render(<Dashboard api={api} />);
     expect(await screen.findByText("128")).toBeInTheDocument();
     expect(screen.getByText("9 orders at high delay risk")).toBeInTheDocument();
@@ -16,7 +16,7 @@ describe("Dashboard", () => {
   });
 
   it("shows an error state when the API is unavailable", async () => {
-    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]) };
+    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn() };
     render(<Dashboard api={api} />);
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
   });
@@ -30,6 +30,7 @@ describe("Dashboard", () => {
       ]),
       getInventory: vi.fn().mockResolvedValue([]),
       getPredictions: vi.fn().mockResolvedValue([]),
+      getDataQuality: vi.fn(),
     };
     render(<Dashboard api={api} />);
     await screen.findByText("2 orders at high delay risk");
@@ -49,6 +50,7 @@ describe("Dashboard", () => {
         { sku: "OK-1", productName: "Healthy part", location: "Oslo", availableQuantity: 40, reservedQuantity: 5, reorderPoint: 20, recommendedOrderQuantity: 0, updatedAt: "2026-08-18T08:00:00Z" },
       ]),
       getPredictions: vi.fn().mockResolvedValue([]),
+      getDataQuality: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
@@ -67,6 +69,7 @@ describe("Dashboard", () => {
         { orderId: "p-1", orderNumber: "NF-PRED-1", delayProbability: 0.91, predictedDelayDays: 5, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T08:00:00Z", dataQualityScore: 0.98, riskFactors: [{ name: "Port congestion", contribution: 0.38 }] },
         { orderId: "p-2", orderNumber: "NF-PRED-2", delayProbability: 0.75, predictedDelayDays: 2, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T08:00:00Z", dataQualityScore: 0.92, riskFactors: [{ name: "Carrier variance", contribution: 0.2 }] },
       ]),
+      getDataQuality: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Predictions" }));
@@ -74,5 +77,24 @@ describe("Dashboard", () => {
     fireEvent.change(screen.getByLabelText("Risk level"), { target: { value: "critical" } });
     expect(screen.getAllByText("NF-PRED-1")).toHaveLength(2);
     expect(screen.queryByText("NF-PRED-2")).not.toBeInTheDocument();
+  });
+
+  it("shows lineage and quarantine contract violations", async () => {
+    const api: NordicFlowApi = {
+      getDashboardSummary: vi.fn().mockResolvedValue({ totalOrders: 1, highRiskOrders: 0, lowStockItems: 0, averageDelayProbability: 0.1, lastUpdatedAt: null }),
+      getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]),
+      getDataQuality: vi.fn().mockResolvedValue({
+        processedEvents: 1000, validEvents: 980, quarantinedEvents: 20, errorRate: 0.02, previousErrorRate: 0.01,
+        contractVersion: "order-event.v1", lastEvaluatedAt: "2026-08-18T08:00:00Z",
+        lineage: [{ name: "Bronze", status: "Healthy", eventCount: 1000, lastUpdatedAt: "2026-08-18T08:00:00Z" }, { name: "Silver", status: "Warning", eventCount: 980, lastUpdatedAt: "2026-08-18T08:00:00Z" }],
+        violations: [{ rule: "Required value", field: "supplierId", count: 20, severity: "Critical", latestEventId: "evt-1" }],
+      }),
+    };
+    render(<Dashboard api={api} />);
+    fireEvent.click(screen.getByRole("button", { name: "Data quality" }));
+    expect(await screen.findByText("Required value")).toBeInTheDocument();
+    expect(screen.getByText("supplierId")).toBeInTheDocument();
+    expect(screen.getByText("Silver")).toBeInTheDocument();
+    expect(screen.getByText("2.00%")).toBeInTheDocument();
   });
 });
