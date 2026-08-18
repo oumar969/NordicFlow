@@ -108,7 +108,6 @@ resource "azurerm_storage_account" "lake" {
   tags                            = local.common_tags
 
   blob_properties {
-    versioning_enabled = true
     delete_retention_policy { days = 14 }
     container_delete_retention_policy { days = 14 }
   }
