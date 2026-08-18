@@ -44,6 +44,156 @@ resource "azurerm_subnet" "postgres" {
   }
 }
 
+resource "azurerm_network_security_group" "databricks" {
+  count               = var.databricks_enabled ? 1 : 0
+  name                = "nsg-databricks-${local.name_prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  tags                = local.common_tags
+}
+
+resource "azurerm_subnet" "databricks_public" {
+  count                = var.databricks_enabled ? 1 : 0
+  name                 = "snet-databricks-public"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes     = ["10.40.2.0/24"]
+
+  delegation {
+    name = "databricks-workspaces"
+    service_delegation {
+      name = "Microsoft.Databricks/workspaces"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action",
+        "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+      ]
+    }
+  }
+}
+
+resource "azurerm_subnet" "databricks_private" {
+  count                = var.databricks_enabled ? 1 : 0
+  name                 = "snet-databricks-private"
+  resource_group_name  = azurerm_resource_group.this.name
+  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes     = ["10.40.3.0/24"]
+
+  delegation {
+    name = "databricks-workspaces"
+    service_delegation {
+      name = "Microsoft.Databricks/workspaces"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/virtualNetworks/subnets/prepareNetworkPolicies/action",
+        "Microsoft.Network/virtualNetworks/subnets/unprepareNetworkPolicies/action"
+      ]
+    }
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "databricks_public" {
+  count                     = var.databricks_enabled ? 1 : 0
+  subnet_id                 = azurerm_subnet.databricks_public[0].id
+  network_security_group_id = azurerm_network_security_group.databricks[0].id
+}
+
+resource "azurerm_subnet_network_security_group_association" "databricks_private" {
+  count                     = var.databricks_enabled ? 1 : 0
+  subnet_id                 = azurerm_subnet.databricks_private[0].id
+  network_security_group_id = azurerm_network_security_group.databricks[0].id
+}
+
+resource "azurerm_public_ip" "databricks_nat" {
+  count               = var.databricks_enabled ? 1 : 0
+  name                = "pip-databricks-nat-${local.name_prefix}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = local.common_tags
+}
+
+resource "azurerm_nat_gateway" "databricks" {
+  count                   = var.databricks_enabled ? 1 : 0
+  name                    = "nat-databricks-${local.name_prefix}"
+  location                = azurerm_resource_group.this.location
+  resource_group_name     = azurerm_resource_group.this.name
+  sku_name                = "Standard"
+  idle_timeout_in_minutes = 10
+  tags                    = local.common_tags
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "databricks" {
+  count                = var.databricks_enabled ? 1 : 0
+  nat_gateway_id       = azurerm_nat_gateway.databricks[0].id
+  public_ip_address_id = azurerm_public_ip.databricks_nat[0].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "databricks_public" {
+  count          = var.databricks_enabled ? 1 : 0
+  subnet_id      = azurerm_subnet.databricks_public[0].id
+  nat_gateway_id = azurerm_nat_gateway.databricks[0].id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "databricks_private" {
+  count          = var.databricks_enabled ? 1 : 0
+  subnet_id      = azurerm_subnet.databricks_private[0].id
+  nat_gateway_id = azurerm_nat_gateway.databricks[0].id
+}
+
+resource "azurerm_databricks_access_connector" "this" {
+  count               = var.databricks_enabled ? 1 : 0
+  name                = "ac-databricks-${local.name_prefix}-${random_string.suffix.result}"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  tags                = local.common_tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+}
+
+resource "azurerm_databricks_workspace" "this" {
+  count                                 = var.databricks_enabled ? 1 : 0
+  name                                  = "dbw-${local.name_prefix}-${random_string.suffix.result}"
+  resource_group_name                   = azurerm_resource_group.this.name
+  location                              = azurerm_resource_group.this.location
+  sku                                   = "premium"
+  managed_resource_group_name           = "rg-databricks-${local.name_prefix}-${random_string.suffix.result}"
+  public_network_access_enabled         = true
+  network_security_group_rules_required = "AllRules"
+  tags                                  = local.common_tags
+
+  custom_parameters {
+    no_public_ip                                         = true
+    virtual_network_id                                   = azurerm_virtual_network.this.id
+    public_subnet_name                                   = azurerm_subnet.databricks_public[0].name
+    private_subnet_name                                  = azurerm_subnet.databricks_private[0].name
+    public_subnet_network_security_group_association_id  = azurerm_subnet_network_security_group_association.databricks_public[0].id
+    private_subnet_network_security_group_association_id = azurerm_subnet_network_security_group_association.databricks_private[0].id
+  }
+
+  depends_on = [
+    azurerm_subnet_nat_gateway_association.databricks_public,
+    azurerm_subnet_nat_gateway_association.databricks_private
+  ]
+}
+
+resource "azurerm_role_assignment" "databricks_lake_contributor" {
+  count                = var.databricks_enabled ? 1 : 0
+  scope                = azurerm_storage_account.lake.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_databricks_access_connector.this[0].identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "databricks_eventhub_receiver_managed_identity" {
+  count                = var.databricks_enabled ? 1 : 0
+  scope                = azurerm_eventhub.orders.id
+  role_definition_name = "Azure Event Hubs Data Receiver"
+  principal_id         = azurerm_databricks_access_connector.this[0].identity[0].principal_id
+}
+
 resource "azurerm_private_dns_zone" "postgres" {
   name                = "${local.name_prefix}.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.this.name

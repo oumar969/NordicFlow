@@ -1,8 +1,16 @@
 # Azure infrastructure baseline
 
-This stack provisions private Azure Database for PostgreSQL Flexible Server and an
-ADLS Gen2 account with Bronze, Silver, Gold, and quarantine filesystems. Password
-authentication, public access, shared keys, and anonymous blob access are disabled.
+This stack provisions private Azure Database for PostgreSQL Flexible Server, an ADLS
+Gen2 account with Bronze, Silver, Gold, and quarantine filesystems, and a Premium
+Azure Databricks workspace injected into the platform VNet. Databricks compute has no
+public IP addresses and uses a NAT Gateway for explicit outbound connectivity.
+Password authentication, public database access, shared keys, and anonymous blob
+access are disabled.
+
+The Databricks access connector receives only `Storage Blob Data Contributor` on the
+NordicFlow lake and `Azure Event Hubs Data Receiver` on the orders hub. Its
+`databricks_identity_object_id` output is the object ID to map to the least-privilege
+PostgreSQL Entra role after the workspace has been deployed.
 
 Use remote encrypted state with locking before team deployment (for example, an
 existing centrally governed Azure Storage backend). The backend is intentionally not

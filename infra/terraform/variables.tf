@@ -74,3 +74,9 @@ variable "apim_publisher_email" {
   type        = string
   default     = "platform@nordicflow.invalid"
 }
+
+variable "databricks_enabled" {
+  description = "Provision the VNet-injected Azure Databricks workspace and access connector."
+  type        = bool
+  default     = true
+}

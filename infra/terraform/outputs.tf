@@ -17,3 +17,20 @@ output "event_hubs_fully_qualified_namespace" {
 output "orders_event_hub_name" {
   value = azurerm_eventhub.orders.name
 }
+
+output "databricks_workspace_name" {
+  value = var.databricks_enabled ? azurerm_databricks_workspace.this[0].name : null
+}
+
+output "databricks_workspace_url" {
+  value = var.databricks_enabled ? azurerm_databricks_workspace.this[0].workspace_url : null
+}
+
+output "databricks_access_connector_id" {
+  value = var.databricks_enabled ? azurerm_databricks_access_connector.this[0].id : null
+}
+
+output "databricks_identity_object_id" {
+  description = "Object ID used when creating the PostgreSQL Entra database principal."
+  value       = var.databricks_enabled ? azurerm_databricks_access_connector.this[0].identity[0].principal_id : null
+}

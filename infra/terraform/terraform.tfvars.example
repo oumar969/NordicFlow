@@ -3,6 +3,7 @@ environment                      = "dev"
 location                         = "northeurope"
 postgres_administrator_object_id = "00000000-0000-0000-0000-000000000000"
 postgres_administrator_name      = "nordicflow-postgres-admins"
+databricks_enabled               = true
 # api_principal_object_id        = "00000000-0000-0000-0000-000000000000"
 # databricks_ingestion_principal_object_id = "00000000-0000-0000-0000-000000000000"
 # api_origin_url                 = "https://api.internal.example"
