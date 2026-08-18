@@ -241,6 +241,19 @@ resource "azurerm_postgresql_flexible_server_active_directory_administrator" "th
   principal_type      = "Group"
 }
 
+# Temporary bootstrap administrator. Remove this assignment after the database
+# schema has been installed and least-privilege grants have been applied.
+resource "azurerm_postgresql_flexible_server_active_directory_administrator" "databricks_bootstrap" {
+  count = var.databricks_enabled ? 1 : 0
+
+  server_name         = azurerm_postgresql_flexible_server.this.name
+  resource_group_name = azurerm_resource_group.this.name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+  object_id           = azurerm_databricks_access_connector.this[0].identity[0].principal_id
+  principal_name      = azurerm_databricks_access_connector.this[0].name
+  principal_type      = "ServicePrincipal"
+}
+
 resource "azurerm_postgresql_flexible_server_database" "nordicflow" {
   name      = "nordicflow"
   server_id = azurerm_postgresql_flexible_server.this.id
