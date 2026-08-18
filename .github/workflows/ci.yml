@@ -53,6 +53,20 @@ jobs:
       - name: Build Event Hubs OAuth callback
         working-directory: data-platform/connectors/eventhubs-oauth
         run: mvn --batch-mode --no-transfer-progress verify
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+      - name: Install dashboard dependencies
+        working-directory: src/frontend
+        run: npm ci
+      - name: Test dashboard
+        working-directory: src/frontend
+        run: npm test
+      - name: Build dashboard
+        working-directory: src/frontend
+        run: npm run build
 
   terraform-validate:
     runs-on: ubuntu-latest

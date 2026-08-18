@@ -20,7 +20,15 @@ databricks.yml              Databricks Asset Bundle monitoring job
 dotnet restore src/backend/NordicFlow.slnx
 dotnet test src/backend/NordicFlow.slnx
 dotnet run --project src/backend/NordicFlow.WebApi
+
+cd src/frontend
+npm ci
+npm run dev
 ```
+
+The dashboard reads `VITE_API_BASE_URL` and expects an OIDC access token in
+`sessionStorage` under `nordicflow.access_token`. Its tenant-scoped overview is
+served by `GET /api/v1/dashboard/summary` with the `dashboard:read` scope.
 
 POST `contracts/order-created/v1/example.json` to `/api/v1/orders/events`. Duplicate
 `eventId` values are accepted idempotently and return the existing resource.

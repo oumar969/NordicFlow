@@ -1,4 +1,5 @@
 using NordicFlow.Application.Orders;
+using NordicFlow.Application.Dashboard;
 using NordicFlow.Infrastructure;
 using NordicFlow.WebApi.Endpoints;
 using NordicFlow.WebApi.Observability;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddNordicFlowObservability();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IngestOrderCreatedHandler>();
+builder.Services.AddScoped<GetDashboardSummaryHandler>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

@@ -16,4 +16,7 @@ __pycache__/
 .appdata/
 .databricks/
 .tools/
+node_modules/
+dist/
+*.tsbuildinfo
 crash.log

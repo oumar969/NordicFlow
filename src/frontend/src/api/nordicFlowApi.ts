@@ -17,6 +17,36 @@ export interface DashboardSnapshot {
   inventory: InventoryStatus[];
 }
 
+export interface DashboardSummary {
+  totalOrders: number;
+  highRiskOrders: number;
+  lowStockItems: number;
+  averageDelayProbability: number;
+  lastUpdatedAt: string | null;
+}
+
+export interface NordicFlowApi {
+  getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
+}
+
+export function createNordicFlowApi(
+  apiBaseUrl: string,
+  getAccessToken: () => Promise<string>,
+): NordicFlowApi {
+  return {
+    async getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/dashboard/summary`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(`Dashboard summary request failed (${response.status})`);
+      return response.json() as Promise<DashboardSummary>;
+    },
+  };
+}
+
 export async function getDashboardSnapshot(
   apiBaseUrl: string,
   accessToken: string,

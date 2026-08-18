@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddSingleton(_ => NpgsqlDataSource.Create(connectionString));
         services.AddScoped<IOrderRepository, PostgresOrderRepository>();
         services.AddScoped<IDashboardQuery, PostgresDashboardQuery>();
+        services.AddScoped<IDashboardSummaryQuery, PostgresDashboardSummaryQuery>();
         var eventHubs = configuration.GetSection(EventHubsOptions.SectionName)
             .Get<EventHubsOptions>() ?? new EventHubsOptions();
         services.Configure<EventHubsOptions>(configuration.GetSection(EventHubsOptions.SectionName));
