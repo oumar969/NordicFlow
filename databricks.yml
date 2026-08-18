@@ -49,11 +49,11 @@ resources:
             driver_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             worker_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             num_workers: 1
             data_security_mode: SINGLE_USER
       tasks:
@@ -91,11 +91,11 @@ resources:
             driver_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             worker_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             num_workers: 2
             data_security_mode: SINGLE_USER
       tasks:
@@ -146,11 +146,11 @@ resources:
             driver_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             worker_node_type_flexibility:
               alternate_node_type_ids:
                 - Standard_D4ads_v5
-                - Standard_D4d_v5
+                - Standard_D4ds_v4
             num_workers: 2
             data_security_mode: SINGLE_USER
       tasks:
