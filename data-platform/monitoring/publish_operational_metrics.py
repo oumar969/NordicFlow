@@ -87,9 +87,10 @@ def publish(
     postgres_host: str,
     postgres_database: str,
     postgres_user: str,
+    azure_service_credential: str,
     quarantine_threshold: float,
 ) -> None:
-    from azure.identity import DefaultAzureCredential
+    from databricks.sdk.runtime import dbutils
     import psycopg
 
     if not 0 < quarantine_threshold <= 1:
@@ -97,7 +98,8 @@ def publish(
     evaluated_at = datetime.now(timezone.utc)
     bronze = spark.table(bronze_table).filter(F.col("_ingested_at") >= F.to_timestamp(F.lit(window_start)))
     checked = with_quality_results(bronze)
-    token = DefaultAzureCredential().get_token(TOKEN_SCOPE).token
+    credential = dbutils.credentials.getServiceCredentialsProvider(azure_service_credential)
+    token = credential.get_token(TOKEN_SCOPE).token
 
     with psycopg.connect(
         host=postgres_host,
@@ -195,6 +197,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--postgres-host", required=True)
     parser.add_argument("--postgres-database", required=True)
     parser.add_argument("--postgres-user", required=True)
+    parser.add_argument("--azure-service-credential", required=True)
     parser.add_argument("--quarantine-threshold", type=float, default=0.01)
     return parser.parse_args()
 
@@ -203,4 +206,4 @@ if __name__ == "__main__":
     args = parse_args()
     publish(spark, args.bronze_table, args.window_start, args.pipeline_run_id,  # noqa: F821
             args.postgres_host, args.postgres_database, args.postgres_user,
-            args.quarantine_threshold)
+            args.azure_service_credential, args.quarantine_threshold)

@@ -13,7 +13,7 @@ variables:
   bronze_checkpoint:
     description: Durable ADLS/Volume checkpoint path unique to this query
   spark_version:
-    default: 15.4.x-scala2.12
+    default: 16.4.x-scala2.12
   node_type_id:
     default: Standard_D4ds_v5
   postgres_host:
@@ -22,6 +22,9 @@ variables:
     default: nordicflow
   postgres_user:
     description: Entra service-principal database role
+  azure_service_credential:
+    default: nordicflow-azure-services
+    description: Unity Catalog service credential used for Azure token acquisition
 
 resources:
   jobs:
@@ -115,10 +118,10 @@ resources:
               - ${var.postgres_database}
               - --postgres-user
               - ${var.postgres_user}
+              - --azure-service-credential
+              - ${var.azure_service_credential}
               - --quarantine-threshold
               - "0.01"
           libraries:
-            - pypi:
-                package: azure-identity==1.25.1
             - pypi:
                 package: psycopg[binary]==3.2.10

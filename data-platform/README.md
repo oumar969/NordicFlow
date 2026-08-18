@@ -32,16 +32,19 @@ responsible for contract validation and `eventId` deduplication.
 ## Operational metrics serving
 
 Set the bundle variables `postgres_host`, `postgres_database`, and `postgres_user`.
+The job explicitly uses the workspace-bound `nordicflow-azure-services` Unity Catalog
+service credential to acquire its short-lived PostgreSQL token. The job principal
+must have only `ACCESS` on that credential.
 The PostgreSQL user must be an Entra database principal representing the Databricks
 workload identity, with INSERT/UPDATE/SELECT permissions limited to
 `data_quality_runs`, `data_lineage_stages`, `data_contract_violations`, `alert_rules`,
 and `operational_alerts`. Apply `src/backend/NordicFlow.Infrastructure/Persistence/schema.sql`
 before enabling the job.
 
-The publisher uses `DefaultAzureCredential` to request a short-lived Azure Database
-for PostgreSQL token. No database password, connection string, event payload, or token
-is stored in the bundle, PostgreSQL tables, or task logs. Network access should be
-restricted to the Databricks VNet/private endpoint path.
+The publisher requests a short-lived Azure Database for PostgreSQL token through the
+named Unity Catalog service credential. No database password, connection string,
+event payload, or token is stored in the bundle, PostgreSQL tables, or task logs.
+Network access should be restricted to the Databricks VNet/private endpoint path.
 
 Each tenant/run pair uses a deterministic identifier. A repaired or retried job
 updates the same quality snapshot and alert instead of creating duplicates. When the
