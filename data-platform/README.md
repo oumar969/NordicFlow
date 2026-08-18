@@ -1,9 +1,9 @@
 # Databricks pipeline
 
-Create a job using `silver/order_created_silver.py` and pass fully-qualified Unity
-Catalog table names through the `bronze_table`, `silver_table`, and
-`quarantine_table` widgets. Grant the job service principal SELECT on Bronze and
-MODIFY on only the target Silver and quarantine schemas.
+The `silver_processing` job in `databricks.yml` validates Bronze events, merges valid
+records into Silver, writes rejected records to quarantine, and publishes small
+tenant-level operational aggregates to PostgreSQL. Grant the job service principal
+SELECT on Bronze and MODIFY on only the target Silver and quarantine schemas.
 
 Bronze is append-only and must retain `_raw_payload`, `_ingested_at`, source topic,
 partition and offset. Silver uses a Delta MERGE keyed by `eventId`; quarantined rows
@@ -28,3 +28,22 @@ job is initially `PAUSED`; deploy, validate network/DNS and identity, then unpau
 Do not delete or reuse a checkpoint for another query. Starting from `earliest` only
 applies when no checkpoint exists. Bronze remains append-only; downstream Silver is
 responsible for contract validation and `eventId` deduplication.
+
+## Operational metrics serving
+
+Set the bundle variables `postgres_host`, `postgres_database`, and `postgres_user`.
+The PostgreSQL user must be an Entra database principal representing the Databricks
+workload identity, with INSERT/UPDATE/SELECT permissions limited to
+`data_quality_runs`, `data_lineage_stages`, `data_contract_violations`, `alert_rules`,
+and `operational_alerts`. Apply `src/backend/NordicFlow.Infrastructure/Persistence/schema.sql`
+before enabling the job.
+
+The publisher uses `DefaultAzureCredential` to request a short-lived Azure Database
+for PostgreSQL token. No database password, connection string, event payload, or token
+is stored in the bundle, PostgreSQL tables, or task logs. Network access should be
+restricted to the Databricks VNet/private endpoint path.
+
+Each tenant/run pair uses a deterministic identifier. A repaired or retried job
+updates the same quality snapshot and alert instead of creating duplicates. When the
+quarantine rate falls below the configured threshold, previous open quarantine-rate
+alerts are automatically resolved.

@@ -16,6 +16,12 @@ variables:
     default: 15.4.x-scala2.12
   node_type_id:
     default: Standard_D4ds_v5
+  postgres_host:
+    description: Azure PostgreSQL hostname
+  postgres_database:
+    default: nordicflow
+  postgres_user:
+    description: Entra service-principal database role
 
 resources:
   jobs:
@@ -56,7 +62,7 @@ resources:
         timezone_id: Europe/Berlin
         pause_status: UNPAUSED
       email_notifications:
-        on_failure: [${var.alert_email}]
+        on_failure: ["${var.alert_email}"]
         no_alert_for_skipped_runs: true
       tasks:
         - task_key: monitor_quarantine_rate
@@ -68,3 +74,51 @@ resources:
         - environment_key: default
           spec:
             client: "4"
+    silver_processing:
+      name: NordicFlow Bronze to Silver
+      max_concurrent_runs: 1
+      job_clusters:
+        - job_cluster_key: silver_cluster
+          new_cluster:
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
+            num_workers: 2
+            data_security_mode: SINGLE_USER
+      tasks:
+        - task_key: transform_order_events
+          job_cluster_key: silver_cluster
+          spark_python_task:
+            python_file: ./data-platform/silver/order_created_silver.py
+            parameters:
+              - --bronze-table
+              - ${var.catalog}.bronze.order_created_raw
+              - --silver-table
+              - ${var.catalog}.silver.order_created
+              - --quarantine-table
+              - ${var.catalog}.silver.order_created_quarantine
+        - task_key: publish_operational_metrics
+          depends_on:
+            - task_key: transform_order_events
+          job_cluster_key: silver_cluster
+          spark_python_task:
+            python_file: ./data-platform/monitoring/publish_operational_metrics.py
+            parameters:
+              - --bronze-table
+              - ${var.catalog}.bronze.order_created_raw
+              - --window-start
+              - "{{job.start_time.iso_datetime}}"
+              - --pipeline-run-id
+              - "{{job.run_id}}"
+              - --postgres-host
+              - ${var.postgres_host}
+              - --postgres-database
+              - ${var.postgres_database}
+              - --postgres-user
+              - ${var.postgres_user}
+              - --quarantine-threshold
+              - "0.01"
+          libraries:
+            - pypi:
+                package: azure-identity==1.25.1
+            - pypi:
+                package: psycopg[binary]==3.2.10

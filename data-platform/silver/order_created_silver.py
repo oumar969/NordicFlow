@@ -5,6 +5,8 @@ valid records idempotently to Silver, and appends invalid records to quarantine.
 Expected Bronze columns: the contract fields plus `_ingested_at` and `_raw_payload`.
 """
 
+import argparse
+
 from pyspark.sql import DataFrame, SparkSession, functions as F
 
 EVENT_TYPE = "nordicflow.order.created.v1"
@@ -84,5 +86,14 @@ def run(spark: SparkSession, bronze_table: str, silver_table: str, quarantine_ta
     ).whenNotMatchedInsertAll().execute()
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--bronze-table", required=True)
+    parser.add_argument("--silver-table", required=True)
+    parser.add_argument("--quarantine-table", required=True)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    run(spark, dbutils.widgets.get("bronze_table"), dbutils.widgets.get("silver_table"), dbutils.widgets.get("quarantine_table"))  # noqa: F821
+    args = parse_args()
+    run(spark, args.bronze_table, args.silver_table, args.quarantine_table)  # noqa: F821
