@@ -142,6 +142,14 @@ resource "azurerm_subnet_nat_gateway_association" "databricks_private" {
   nat_gateway_id = azurerm_nat_gateway.databricks[0].id
 }
 
+resource "azurerm_user_assigned_identity" "databricks_jobs" {
+  count               = var.databricks_enabled ? 1 : 0
+  name                = "id-databricks-jobs-${local.name_prefix}-${random_string.suffix.result}"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  tags                = local.common_tags
+}
+
 resource "azurerm_databricks_access_connector" "this" {
   count               = var.databricks_enabled ? 1 : 0
   name                = "ac-databricks-${local.name_prefix}-${random_string.suffix.result}"
@@ -150,7 +158,8 @@ resource "azurerm_databricks_access_connector" "this" {
   tags                = local.common_tags
 
   identity {
-    type = "SystemAssigned"
+    type         = "SystemAssigned, UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.databricks_jobs[0].id]
   }
 }
 

@@ -31,6 +31,16 @@ output "databricks_access_connector_id" {
 }
 
 output "databricks_identity_object_id" {
-  description = "Object ID used when creating the PostgreSQL Entra database principal."
+  description = "System-assigned bootstrap identity object ID."
   value       = var.databricks_enabled ? azurerm_databricks_access_connector.this[0].identity[0].principal_id : null
+}
+
+output "databricks_jobs_identity_id" {
+  description = "Resource ID of the least-privilege managed identity used by Databricks jobs."
+  value       = var.databricks_enabled ? azurerm_user_assigned_identity.databricks_jobs[0].id : null
+}
+
+output "databricks_jobs_identity_object_id" {
+  description = "Object ID used to create the PostgreSQL runtime principal."
+  value       = var.databricks_enabled ? azurerm_user_assigned_identity.databricks_jobs[0].principal_id : null
 }
