@@ -25,8 +25,20 @@ export interface DashboardSummary {
   lastUpdatedAt: string | null;
 }
 
+export interface DelayedOrder {
+  orderId: string;
+  orderNumber: string;
+  supplierName: string;
+  destination: string;
+  requestedDeliveryDate: string;
+  delayProbability: number;
+  predictedDelayDays: number;
+  status: "At risk" | "Delayed" | "Monitoring";
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
+  getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
 }
 
 export function createNordicFlowApi(
@@ -43,6 +55,16 @@ export function createNordicFlowApi(
       if (!response.ok)
         throw new Error(`Dashboard summary request failed (${response.status})`);
       return response.json() as Promise<DashboardSummary>;
+    },
+    async getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/orders/delayed`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
+      });
+      if (!response.ok)
+        throw new Error(`Delayed orders request failed (${response.status})`);
+      return response.json() as Promise<DelayedOrder[]>;
     },
   };
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import type { DashboardSummary, NordicFlowApi } from "./api/nordicFlowApi";
+import { DelayedOrders } from "./DelayedOrders";
 
 interface DashboardProps { api: NordicFlowApi; }
 
@@ -11,6 +12,7 @@ const emptySummary: DashboardSummary = {
 export function Dashboard({ api }: DashboardProps) {
   const [summary, setSummary] = useState(emptySummary);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [page, setPage] = useState<"overview" | "orders">("overview");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -29,15 +31,16 @@ export function Dashboard({ api }: DashboardProps) {
       <aside className="sidebar">
         <div className="brand"><span className="brand-mark">NF</span><span>NordicFlow</span></div>
         <nav aria-label="Primary navigation">
-          <a className="nav-item active" href="#overview">Overview</a>
-          <a className="nav-item" href="#orders">Orders</a>
-          <a className="nav-item" href="#inventory">Inventory</a>
-          <a className="nav-item" href="#predictions">Predictions</a>
-          <a className="nav-item" href="#quality">Data quality</a>
+          <button className={`nav-item ${page === "overview" ? "active" : ""}`} type="button" onClick={() => setPage("overview")}>Overview</button>
+          <button className={`nav-item ${page === "orders" ? "active" : ""}`} type="button" onClick={() => setPage("orders")}>Orders</button>
+          <button className="nav-item" type="button" disabled>Inventory</button>
+          <button className="nav-item" type="button" disabled>Predictions</button>
+          <button className="nav-item" type="button" disabled>Data quality</button>
         </nav>
         <div className="environment"><span className="status-dot" />Development</div>
       </aside>
       <main>
+        {page === "orders" ? <DelayedOrders api={api} onBack={() => setPage("overview")} /> : <>
         <header className="topbar">
           <div><p className="eyebrow">Supply chain intelligence</p><h1>Control tower</h1></div>
           <div className="user-chip" aria-label="Signed in user"><span>OA</span><div><strong>Omar Ammar</strong><small>Platform administrator</small></div></div>
@@ -57,11 +60,12 @@ export function Dashboard({ api }: DashboardProps) {
           </article>
           <article className="panel action-panel">
             <div className="panel-heading"><div><p className="eyebrow">Attention required</p><h2>Operational queue</h2></div></div>
-            <Action tone="danger" icon="!" title={`${summary.highRiskOrders} orders at high delay risk`} hint="Review supplier and transport constraints" />
-            <Action tone="warning" icon="↓" title={`${summary.lowStockItems} inventory positions running low`} hint="Confirm replenishment priorities" />
+            <Action tone="danger" icon="!" title={`${summary.highRiskOrders} orders at high delay risk`} hint="Review supplier and transport constraints" onReview={() => setPage("orders")} />
+            <Action tone="warning" icon="↓" title={`${summary.lowStockItems} inventory positions running low`} hint="Confirm replenishment priorities" disabled />
             <div className="data-freshness"><span className="status-dot" />Data refreshed {formatTimestamp(summary.lastUpdatedAt)}</div>
           </article>
         </section>
+        </>}
       </main>
     </div>
   );
@@ -72,9 +76,9 @@ function Metric({ label, value, hint, tone, loading }: MetricProps) {
   return <article className={`metric-card ${tone ?? ""}`}><p>{label}</p><strong className={loading ? "skeleton" : ""}>{loading ? "—" : value}</strong><span>{hint}</span></article>;
 }
 
-interface ActionProps { tone: "danger" | "warning"; icon: string; title: string; hint: string; }
-function Action({ tone, icon, title, hint }: ActionProps) {
-  return <div className="action-row"><span className={`action-icon ${tone}`}>{icon}</span><div><strong>{title}</strong><small>{hint}</small></div><button type="button">Review</button></div>;
+interface ActionProps { tone: "danger" | "warning"; icon: string; title: string; hint: string; onReview?: () => void; disabled?: boolean; }
+function Action({ tone, icon, title, hint, onReview, disabled }: ActionProps) {
+  return <div className="action-row"><span className={`action-icon ${tone}`}>{icon}</span><div><strong>{title}</strong><small>{hint}</small></div><button type="button" onClick={onReview} disabled={disabled}>{disabled ? "Soon" : "Review"}</button></div>;
 }
 
 function formatTimestamp(value: string | null): string {
