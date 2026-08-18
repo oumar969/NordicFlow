@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import type { DashboardSummary, NordicFlowApi } from "./api/nordicFlowApi";
 import { DelayedOrders } from "./DelayedOrders";
 import { Inventory } from "./Inventory";
+import { Predictions } from "./Predictions";
 
 interface DashboardProps { api: NordicFlowApi; }
 
@@ -13,7 +14,7 @@ const emptySummary: DashboardSummary = {
 export function Dashboard({ api }: DashboardProps) {
   const [summary, setSummary] = useState(emptySummary);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [page, setPage] = useState<"overview" | "orders" | "inventory">("overview");
+  const [page, setPage] = useState<"overview" | "orders" | "inventory" | "predictions">("overview");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -35,13 +36,13 @@ export function Dashboard({ api }: DashboardProps) {
           <button className={`nav-item ${page === "overview" ? "active" : ""}`} type="button" onClick={() => setPage("overview")}>Overview</button>
           <button className={`nav-item ${page === "orders" ? "active" : ""}`} type="button" onClick={() => setPage("orders")}>Orders</button>
           <button className={`nav-item ${page === "inventory" ? "active" : ""}`} type="button" onClick={() => setPage("inventory")}>Inventory</button>
-          <button className="nav-item" type="button" disabled>Predictions</button>
+          <button className={`nav-item ${page === "predictions" ? "active" : ""}`} type="button" onClick={() => setPage("predictions")}>Predictions</button>
           <button className="nav-item" type="button" disabled>Data quality</button>
         </nav>
         <div className="environment"><span className="status-dot" />Development</div>
       </aside>
       <main>
-        {page === "orders" ? <DelayedOrders api={api} onBack={() => setPage("overview")} /> : page === "inventory" ? <Inventory api={api} onBack={() => setPage("overview")} /> : <>
+        {page === "orders" ? <DelayedOrders api={api} onBack={() => setPage("overview")} /> : page === "inventory" ? <Inventory api={api} onBack={() => setPage("overview")} /> : page === "predictions" ? <Predictions api={api} onBack={() => setPage("overview")} /> : <>
         <header className="topbar">
           <div><p className="eyebrow">Supply chain intelligence</p><h1>Control tower</h1></div>
           <div className="user-chip" aria-label="Signed in user"><span>OA</span><div><strong>Omar Ammar</strong><small>Platform administrator</small></div></div>

@@ -1,4 +1,4 @@
-import type { DelayedOrder, InventoryItem, NordicFlowApi } from "./nordicFlowApi";
+import type { DelayedOrder, InventoryItem, NordicFlowApi, PredictionInsight } from "./nordicFlowApi";
 
 const delayedOrders: DelayedOrder[] = [
   { orderId: "75274155-6950-4bc3-bc28-b26f353ed169", orderNumber: "NF-10482", supplierName: "Baltic Components", destination: "Aarhus, DK", requestedDeliveryDate: "2026-08-19", delayProbability: 0.92, predictedDelayDays: 5, status: "Delayed" },
@@ -17,6 +17,13 @@ const inventory: InventoryItem[] = [
   { sku: "CBL-5M", productName: "Shielded signal cable 5m", location: "Aarhus DC", availableQuantity: 184, reservedQuantity: 62, reorderPoint: 100, recommendedOrderQuantity: 0, updatedAt: "2026-08-18T12:15:00Z" },
 ];
 
+const predictions: PredictionInsight[] = [
+  { orderId: "75274155-6950-4bc3-bc28-b26f353ed169", orderNumber: "NF-10482", delayProbability: 0.92, predictedDelayDays: 5, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T12:29:00Z", dataQualityScore: 0.98, riskFactors: [{ name: "Supplier reliability", contribution: 0.38 }, { name: "Port congestion", contribution: 0.31 }, { name: "Transit variance", contribution: 0.19 }] },
+  { orderId: "493fd77f-f99a-430f-8843-0049036f608a", orderNumber: "NF-10467", delayProbability: 0.86, predictedDelayDays: 3, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T12:27:00Z", dataQualityScore: 0.94, riskFactors: [{ name: "Carrier performance", contribution: 0.34 }, { name: "Lead-time deviation", contribution: 0.27 }, { name: "Weather exposure", contribution: 0.16 }] },
+  { orderId: "24776902-a8e0-4e8b-bb49-0cdd12a719ae", orderNumber: "NF-10491", delayProbability: 0.79, predictedDelayDays: 2, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T12:24:00Z", dataQualityScore: 0.96, riskFactors: [{ name: "Route volatility", contribution: 0.29 }, { name: "Supplier reliability", contribution: 0.24 }, { name: "Inventory pressure", contribution: 0.18 }] },
+  { orderId: "d559d5a0-8cc6-4bc7-84d3-c700667dcbfb", orderNumber: "NF-10455", delayProbability: 0.71, predictedDelayDays: 2, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T12:20:00Z", dataQualityScore: 0.88, riskFactors: [{ name: "Missing milestone", contribution: 0.32 }, { name: "Historical variance", contribution: 0.21 }, { name: "Carrier performance", contribution: 0.12 }] },
+];
+
 export function createDemoNordicFlowApi(): NordicFlowApi {
   return {
     async getDashboardSummary() {
@@ -27,6 +34,9 @@ export function createDemoNordicFlowApi(): NordicFlowApi {
     },
     async getInventory() {
       return inventory;
+    },
+    async getPredictions() {
+      return predictions;
     },
   };
 }

@@ -8,7 +8,7 @@ describe("Dashboard", () => {
     const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockResolvedValue({
       totalOrders: 128, highRiskOrders: 9, lowStockItems: 4,
       averageDelayProbability: 0.37, lastUpdatedAt: "2026-08-18T08:30:00Z",
-    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]) };
+    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]) };
     render(<Dashboard api={api} />);
     expect(await screen.findByText("128")).toBeInTheDocument();
     expect(screen.getByText("9 orders at high delay risk")).toBeInTheDocument();
@@ -16,7 +16,7 @@ describe("Dashboard", () => {
   });
 
   it("shows an error state when the API is unavailable", async () => {
-    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]) };
+    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]) };
     render(<Dashboard api={api} />);
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
   });
@@ -29,6 +29,7 @@ describe("Dashboard", () => {
         { orderId: "order-2", orderNumber: "NF-101", supplierName: "Fjord", destination: "Oslo", requestedDeliveryDate: "2026-08-21", delayProbability: 0.74, predictedDelayDays: 2, status: "At risk" },
       ]),
       getInventory: vi.fn().mockResolvedValue([]),
+      getPredictions: vi.fn().mockResolvedValue([]),
     };
     render(<Dashboard api={api} />);
     await screen.findByText("2 orders at high delay risk");
@@ -47,6 +48,7 @@ describe("Dashboard", () => {
         { sku: "CRIT-1", productName: "Critical part", location: "Aarhus", availableQuantity: 2, reservedQuantity: 4, reorderPoint: 10, recommendedOrderQuantity: 20, updatedAt: "2026-08-18T08:00:00Z" },
         { sku: "OK-1", productName: "Healthy part", location: "Oslo", availableQuantity: 40, reservedQuantity: 5, reorderPoint: 20, recommendedOrderQuantity: 0, updatedAt: "2026-08-18T08:00:00Z" },
       ]),
+      getPredictions: vi.fn().mockResolvedValue([]),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
@@ -54,5 +56,23 @@ describe("Dashboard", () => {
     fireEvent.change(screen.getByLabelText("Stock status"), { target: { value: "critical" } });
     expect(screen.getByText("CRIT-1")).toBeInTheDocument();
     expect(screen.queryByText("OK-1")).not.toBeInTheDocument();
+  });
+
+  it("shows explainable prediction factors and filters model risk", async () => {
+    const api: NordicFlowApi = {
+      getDashboardSummary: vi.fn().mockResolvedValue({ totalOrders: 1, highRiskOrders: 1, lowStockItems: 0, averageDelayProbability: 0.91, lastUpdatedAt: null }),
+      getDelayedOrders: vi.fn().mockResolvedValue([]),
+      getInventory: vi.fn().mockResolvedValue([]),
+      getPredictions: vi.fn().mockResolvedValue([
+        { orderId: "p-1", orderNumber: "NF-PRED-1", delayProbability: 0.91, predictedDelayDays: 5, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T08:00:00Z", dataQualityScore: 0.98, riskFactors: [{ name: "Port congestion", contribution: 0.38 }] },
+        { orderId: "p-2", orderNumber: "NF-PRED-2", delayProbability: 0.75, predictedDelayDays: 2, modelVersion: "delay-xgb-2.4.1", scoredAt: "2026-08-18T08:00:00Z", dataQualityScore: 0.92, riskFactors: [{ name: "Carrier variance", contribution: 0.2 }] },
+      ]),
+    };
+    render(<Dashboard api={api} />);
+    fireEvent.click(screen.getByRole("button", { name: "Predictions" }));
+    expect(await screen.findByText("Port congestion")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Risk level"), { target: { value: "critical" } });
+    expect(screen.getAllByText("NF-PRED-1")).toHaveLength(2);
+    expect(screen.queryByText("NF-PRED-2")).not.toBeInTheDocument();
   });
 });

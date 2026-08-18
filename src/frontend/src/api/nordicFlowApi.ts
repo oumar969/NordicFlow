@@ -47,10 +47,22 @@ export interface InventoryItem {
   updatedAt: string;
 }
 
+export interface PredictionInsight {
+  orderId: string;
+  orderNumber: string;
+  delayProbability: number;
+  predictedDelayDays: number;
+  modelVersion: string;
+  scoredAt: string;
+  dataQualityScore: number;
+  riskFactors: { name: string; contribution: number }[];
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
   getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
   getInventory(signal?: AbortSignal): Promise<InventoryItem[]>;
+  getPredictions(signal?: AbortSignal): Promise<PredictionInsight[]>;
 }
 
 export function createNordicFlowApi(
@@ -85,6 +97,14 @@ export function createNordicFlowApi(
       });
       if (!response.ok) throw new Error(`Inventory request failed (${response.status})`);
       return response.json() as Promise<InventoryItem[]>;
+    },
+    async getPredictions(signal?: AbortSignal): Promise<PredictionInsight[]> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/predictions/delays`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, signal,
+      });
+      if (!response.ok) throw new Error(`Predictions request failed (${response.status})`);
+      return response.json() as Promise<PredictionInsight[]>;
     },
   };
 }
