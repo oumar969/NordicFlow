@@ -14,6 +14,7 @@ on:
         options:
           - plan
           - apply
+          - databricks-deploy
 
 permissions:
   contents: read
@@ -83,7 +84,7 @@ jobs:
       - run: terraform validate
 
   terraform-plan:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && (inputs.deployment_action == 'plan' || inputs.deployment_action == 'apply')
     needs: [application, terraform-validate]
     runs-on: ubuntu-latest
     timeout-minutes: 90
@@ -128,3 +129,24 @@ jobs:
       - name: Apply
         if: inputs.deployment_action == 'apply'
         run: terraform apply -input=false -auto-approve tfplan
+
+  databricks-deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deployment_action == 'databricks-deploy'
+    needs: [application, terraform-validate]
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      DATABRICKS_AUTH_TYPE: azure-cli
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+      - name: Validate Databricks bundle
+        run: databricks bundle validate --target dev
+      - name: Deploy Databricks bundle
+        run: databricks bundle deploy --target dev

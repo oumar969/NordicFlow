@@ -1,6 +1,10 @@
 bundle:
   name: nordicflow-data-platform
 
+sync:
+  include:
+    - src/backend/NordicFlow.Infrastructure/Persistence/schema.sql
+
 variables:
   alert_email:
     description: Distribution list for data-quality incidents
@@ -65,6 +69,7 @@ resources:
           libraries:
             - pypi:
                 package: psycopg[binary]==3.2.10
+
     bronze_ingestion:
       name: NordicFlow Event Hubs to Bronze
       continuous:
@@ -162,3 +167,22 @@ resources:
           libraries:
             - pypi:
                 package: psycopg[binary]==3.2.10
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://adb-7405611301526749.9.azuredatabricks.net
+    variables:
+      alert_email: oammar198@gmail.com
+      event_hubs_namespace: evhns-nf-dev-lxo2ri.servicebus.windows.net
+      oauth_callback_jar: dbfs:/FileStore/jars/nordicflow-eventhubs-oauth-all.jar
+      bronze_checkpoint: abfss://bronze@stnfdevlxo2ri.dfs.core.windows.net/checkpoints/order-events
+      postgres_host: psql-nf-dev-lxo2ri.postgres.database.azure.com
+      postgres_database: nordicflow
+      postgres_user: id-databricks-jobs-nf-dev-lxo2ri
+      azure_service_credential: nordicflow-postgres-runtime
+      postgres_bootstrap_user: ac-databricks-nf-dev-lxo2ri
+      postgres_bootstrap_credential: nordicflow-azure-services
+      postgres_runtime_principal_object_id: d13065b9-5b5a-463b-ba6e-1a58d69ad1a9
