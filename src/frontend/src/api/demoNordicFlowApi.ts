@@ -1,4 +1,4 @@
-import type { DataQualitySnapshot, DelayedOrder, InventoryItem, NordicFlowApi, ObservabilitySnapshot, PredictionInsight } from "./nordicFlowApi";
+import type { DataQualitySnapshot, DelayedOrder, InventoryItem, NordicFlowApi, ObservabilitySnapshot, OperationsSnapshot, PredictionInsight } from "./nordicFlowApi";
 
 const delayedOrders: DelayedOrder[] = [
   { orderId: "75274155-6950-4bc3-bc28-b26f353ed169", orderNumber: "NF-10482", supplierName: "Baltic Components", destination: "Aarhus, DK", requestedDeliveryDate: "2026-08-19", delayProbability: 0.92, predictedDelayDays: 5, status: "Delayed" },
@@ -67,6 +67,24 @@ const observability: ObservabilitySnapshot = {
   ],
 };
 
+const operations: OperationsSnapshot = {
+  activeAlerts: 4,
+  criticalAlerts: 2,
+  acknowledgedAlerts: 1,
+  meanTimeToAcknowledgeMinutes: 7,
+  alerts: [
+    { id: "alert-001", title: "Quarantine error rate spike", source: "Silver validation", severity: "Critical", status: "Open", currentValue: 1.44, threshold: 1, unit: "%", owner: null, triggeredAt: "2026-08-18T12:25:00Z", correlationId: "corr-quarantine-18420" },
+    { id: "alert-002", title: "Invalid order quantity volume", source: "Data contract", severity: "Critical", status: "Acknowledged", currentValue: 49, threshold: 25, unit: "events", owner: "Data Operations", triggeredAt: "2026-08-18T12:18:00Z", correlationId: "corr-contract-661ca0" },
+    { id: "alert-003", title: "Silver processing latency", source: "Databricks pipeline", severity: "Warning", status: "Open", currentValue: 428, threshold: 350, unit: "ms", owner: null, triggeredAt: "2026-08-18T12:12:00Z", correlationId: null },
+    { id: "alert-004", title: "Missing supplier identifiers", source: "Data contract", severity: "Warning", status: "Open", currentValue: 113, threshold: 100, unit: "events", owner: null, triggeredAt: "2026-08-18T12:05:00Z", correlationId: "corr-contract-9f5e2c" },
+  ],
+  rules: [
+    { id: "rule-001", name: "Quarantine rate", metric: "silver.quarantine.rate", threshold: 1, unit: "%", evaluationWindowMinutes: 15, severity: "Critical", enabled: true },
+    { id: "rule-002", name: "Contract violation volume", metric: "silver.contract.violations", threshold: 25, unit: "events", evaluationWindowMinutes: 10, severity: "Critical", enabled: true },
+    { id: "rule-003", name: "Pipeline P95 latency", metric: "silver.pipeline.p95", threshold: 350, unit: "ms", evaluationWindowMinutes: 15, severity: "Warning", enabled: true },
+  ],
+};
+
 export function createDemoNordicFlowApi(): NordicFlowApi {
   return {
     async getDashboardSummary() {
@@ -86,6 +104,9 @@ export function createDemoNordicFlowApi(): NordicFlowApi {
     },
     async getObservability() {
       return observability;
+    },
+    async getOperations() {
+      return operations;
     },
   };
 }

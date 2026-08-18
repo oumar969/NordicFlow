@@ -113,6 +113,40 @@ export interface TraceRecord {
   startedAt: string;
 }
 
+export interface OperationsSnapshot {
+  activeAlerts: number;
+  criticalAlerts: number;
+  acknowledgedAlerts: number;
+  meanTimeToAcknowledgeMinutes: number;
+  alerts: OperationsAlert[];
+  rules: AlertRule[];
+}
+
+export interface OperationsAlert {
+  id: string;
+  title: string;
+  source: string;
+  severity: "Critical" | "Warning" | "Info";
+  status: "Open" | "Acknowledged" | "Resolved";
+  currentValue: number;
+  threshold: number;
+  unit: "%" | "events" | "ms";
+  owner: string | null;
+  triggeredAt: string;
+  correlationId: string | null;
+}
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  metric: string;
+  threshold: number;
+  unit: "%" | "events" | "ms";
+  evaluationWindowMinutes: number;
+  severity: "Critical" | "Warning" | "Info";
+  enabled: boolean;
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
   getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
@@ -120,6 +154,7 @@ export interface NordicFlowApi {
   getPredictions(signal?: AbortSignal): Promise<PredictionInsight[]>;
   getDataQuality(signal?: AbortSignal): Promise<DataQualitySnapshot>;
   getObservability(signal?: AbortSignal): Promise<ObservabilitySnapshot>;
+  getOperations(signal?: AbortSignal): Promise<OperationsSnapshot>;
 }
 
 export function createNordicFlowApi(
@@ -178,6 +213,14 @@ export function createNordicFlowApi(
       });
       if (!response.ok) throw new Error(`Observability request failed (${response.status})`);
       return response.json() as Promise<ObservabilitySnapshot>;
+    },
+    async getOperations(signal?: AbortSignal): Promise<OperationsSnapshot> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/operations/alerts`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, signal,
+      });
+      if (!response.ok) throw new Error(`Operations request failed (${response.status})`);
+      return response.json() as Promise<OperationsSnapshot>;
     },
   };
 }

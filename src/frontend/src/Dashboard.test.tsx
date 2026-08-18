@@ -8,7 +8,7 @@ describe("Dashboard", () => {
     const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockResolvedValue({
       totalOrders: 128, highRiskOrders: 9, lowStockItems: 4,
       averageDelayProbability: 0.37, lastUpdatedAt: "2026-08-18T08:30:00Z",
-    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn(), getObservability: vi.fn() };
+    }), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn(), getObservability: vi.fn(), getOperations: vi.fn() };
     render(<Dashboard api={api} />);
     expect(await screen.findByText("128")).toBeInTheDocument();
     expect(screen.getByText("9 orders at high delay risk")).toBeInTheDocument();
@@ -16,7 +16,7 @@ describe("Dashboard", () => {
   });
 
   it("shows an error state when the API is unavailable", async () => {
-    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn(), getObservability: vi.fn() };
+    const api: NordicFlowApi = { getDashboardSummary: vi.fn().mockRejectedValue(new Error("offline")), getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn(), getObservability: vi.fn(), getOperations: vi.fn() };
     render(<Dashboard api={api} />);
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
   });
@@ -32,6 +32,7 @@ describe("Dashboard", () => {
       getPredictions: vi.fn().mockResolvedValue([]),
       getDataQuality: vi.fn(),
       getObservability: vi.fn(),
+      getOperations: vi.fn(),
     };
     render(<Dashboard api={api} />);
     await screen.findByText("2 orders at high delay risk");
@@ -53,6 +54,7 @@ describe("Dashboard", () => {
       getPredictions: vi.fn().mockResolvedValue([]),
       getDataQuality: vi.fn(),
       getObservability: vi.fn(),
+      getOperations: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
@@ -73,6 +75,7 @@ describe("Dashboard", () => {
       ]),
       getDataQuality: vi.fn(),
       getObservability: vi.fn(),
+      getOperations: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Predictions" }));
@@ -93,6 +96,7 @@ describe("Dashboard", () => {
         violations: [{ rule: "Required value", field: "supplierId", count: 20, severity: "Critical", latestEventId: "evt-1" }],
       }),
       getObservability: vi.fn(),
+      getOperations: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Data quality" }));
@@ -114,6 +118,7 @@ describe("Dashboard", () => {
           { traceId: "trace-2", correlationId: "corr-beta", eventId: "evt-2", operation: "Silver validation", durationMs: 510, status: "Error", startedAt: "2026-08-18T08:01:00Z" },
         ],
       }),
+      getOperations: vi.fn(),
     };
     render(<Dashboard api={api} />);
     fireEvent.click(screen.getByRole("button", { name: "Observability" }));
@@ -122,5 +127,29 @@ describe("Dashboard", () => {
     fireEvent.change(screen.getByLabelText("Search traces"), { target: { value: "corr-beta" } });
     expect(screen.queryByText("corr-alpha")).not.toBeInTheDocument();
     expect(screen.getByText("Silver validation")).toBeInTheDocument();
+  });
+
+  it("filters alerts and supports acknowledge and resolve handling", async () => {
+    const api: NordicFlowApi = {
+      getDashboardSummary: vi.fn().mockResolvedValue({ totalOrders: 1, highRiskOrders: 0, lowStockItems: 0, averageDelayProbability: 0.1, lastUpdatedAt: null }),
+      getDelayedOrders: vi.fn().mockResolvedValue([]), getInventory: vi.fn().mockResolvedValue([]), getPredictions: vi.fn().mockResolvedValue([]), getDataQuality: vi.fn(), getObservability: vi.fn(),
+      getOperations: vi.fn().mockResolvedValue({
+        activeAlerts: 2, criticalAlerts: 1, acknowledgedAlerts: 0, meanTimeToAcknowledgeMinutes: 6,
+        alerts: [
+          { id: "a-1", title: "Quarantine spike", source: "Silver", severity: "Critical", status: "Open", currentValue: 2, threshold: 1, unit: "%", owner: null, triggeredAt: "2026-08-18T08:00:00Z", correlationId: "corr-1" },
+          { id: "a-2", title: "Latency increase", source: "Pipeline", severity: "Warning", status: "Open", currentValue: 450, threshold: 350, unit: "ms", owner: null, triggeredAt: "2026-08-18T08:01:00Z", correlationId: null },
+        ],
+        rules: [{ id: "r-1", name: "Quarantine rate", metric: "silver.quarantine.rate", threshold: 1, unit: "%", evaluationWindowMinutes: 15, severity: "Critical", enabled: true }],
+      }),
+    };
+    render(<Dashboard api={api} />);
+    fireEvent.click(screen.getByRole("button", { name: "Alerts & operations" }));
+    expect(await screen.findByText("Quarantine spike")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Severity"), { target: { value: "Critical" } });
+    expect(screen.queryByText("Latency increase")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Acknowledge" }));
+    expect(screen.getByText("Data Operations")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+    expect(screen.getByText("Resolved")).toBeInTheDocument();
   });
 });
