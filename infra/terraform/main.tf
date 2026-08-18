@@ -63,6 +63,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   resource_group_name           = azurerm_resource_group.this.name
   location                      = azurerm_resource_group.this.location
   version                       = "16"
+  zone                          = "1"
   delegated_subnet_id           = azurerm_subnet.postgres.id
   private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
   public_network_access_enabled = false
@@ -75,6 +76,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   authentication {
     active_directory_auth_enabled = true
     password_auth_enabled         = false
+    tenant_id                     = data.azurerm_client_config.current.tenant_id
   }
 
   depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
