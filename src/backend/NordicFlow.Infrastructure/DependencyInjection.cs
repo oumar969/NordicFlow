@@ -21,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<IOrderRepository, PostgresOrderRepository>();
         services.AddScoped<IDashboardQuery, PostgresDashboardQuery>();
         services.AddScoped<IDashboardSummaryQuery, PostgresDashboardSummaryQuery>();
+        services.AddScoped<IDataQualityQuery, PostgresDataQualityQuery>();
+        services.AddScoped<IOperationsQuery, PostgresOperationsQuery>();
         var eventHubs = configuration.GetSection(EventHubsOptions.SectionName)
             .Get<EventHubsOptions>() ?? new EventHubsOptions();
         services.Configure<EventHubsOptions>(configuration.GetSection(EventHubsOptions.SectionName));
