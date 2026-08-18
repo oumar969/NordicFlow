@@ -85,12 +85,41 @@ export interface DataContractViolation {
   latestEventId: string;
 }
 
+export interface ObservabilitySnapshot {
+  requestsPerMinute: number;
+  p95LatencyMs: number;
+  errorRate: number;
+  availability: number;
+  telemetryStatus: "Connected" | "Degraded" | "Disconnected";
+  updatedAt: string;
+  services: ServiceHealth[];
+  traces: TraceRecord[];
+}
+
+export interface ServiceHealth {
+  name: string;
+  status: "Healthy" | "Degraded" | "Unavailable";
+  p95LatencyMs: number;
+  errorRate: number;
+}
+
+export interface TraceRecord {
+  traceId: string;
+  correlationId: string;
+  eventId: string;
+  operation: string;
+  durationMs: number;
+  status: "Success" | "Error";
+  startedAt: string;
+}
+
 export interface NordicFlowApi {
   getDashboardSummary(signal?: AbortSignal): Promise<DashboardSummary>;
   getDelayedOrders(signal?: AbortSignal): Promise<DelayedOrder[]>;
   getInventory(signal?: AbortSignal): Promise<InventoryItem[]>;
   getPredictions(signal?: AbortSignal): Promise<PredictionInsight[]>;
   getDataQuality(signal?: AbortSignal): Promise<DataQualitySnapshot>;
+  getObservability(signal?: AbortSignal): Promise<ObservabilitySnapshot>;
 }
 
 export function createNordicFlowApi(
@@ -141,6 +170,14 @@ export function createNordicFlowApi(
       });
       if (!response.ok) throw new Error(`Data quality request failed (${response.status})`);
       return response.json() as Promise<DataQualitySnapshot>;
+    },
+    async getObservability(signal?: AbortSignal): Promise<ObservabilitySnapshot> {
+      const accessToken = await getAccessToken();
+      const response = await fetch(`${apiBaseUrl}/api/v1/observability/summary`, {
+        headers: { Authorization: `Bearer ${accessToken}` }, signal,
+      });
+      if (!response.ok) throw new Error(`Observability request failed (${response.status})`);
+      return response.json() as Promise<ObservabilitySnapshot>;
     },
   };
 }

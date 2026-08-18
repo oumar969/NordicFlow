@@ -1,4 +1,4 @@
-import type { DataQualitySnapshot, DelayedOrder, InventoryItem, NordicFlowApi, PredictionInsight } from "./nordicFlowApi";
+import type { DataQualitySnapshot, DelayedOrder, InventoryItem, NordicFlowApi, ObservabilitySnapshot, PredictionInsight } from "./nordicFlowApi";
 
 const delayedOrders: DelayedOrder[] = [
   { orderId: "75274155-6950-4bc3-bc28-b26f353ed169", orderNumber: "NF-10482", supplierName: "Baltic Components", destination: "Aarhus, DK", requestedDeliveryDate: "2026-08-19", delayProbability: 0.92, predictedDelayDays: 5, status: "Delayed" },
@@ -46,6 +46,27 @@ const dataQuality: DataQualitySnapshot = {
   ],
 };
 
+const observability: ObservabilitySnapshot = {
+  requestsPerMinute: 842,
+  p95LatencyMs: 186,
+  errorRate: 0.0038,
+  availability: 0.9996,
+  telemetryStatus: "Connected",
+  updatedAt: "2026-08-18T12:33:00Z",
+  services: [
+    { name: "Orders API", status: "Healthy", p95LatencyMs: 124, errorRate: 0.0012 },
+    { name: "Outbox publisher", status: "Healthy", p95LatencyMs: 96, errorRate: 0.0007 },
+    { name: "Event Hubs", status: "Healthy", p95LatencyMs: 61, errorRate: 0.0003 },
+    { name: "Silver pipeline", status: "Degraded", p95LatencyMs: 428, errorRate: 0.0144 },
+  ],
+  traces: [
+    { traceId: "4bf92f3577b34da6a3ce929d0e0e4736", correlationId: "corr-10482-dk", eventId: "evt-9f5e2c", operation: "POST /api/v1/orders/events", durationMs: 142, status: "Success", startedAt: "2026-08-18T12:32:54Z" },
+    { traceId: "75ac8da12b224f659a7d204c1723f87e", correlationId: "corr-10467-se", eventId: "evt-7b41ad", operation: "Outbox publish", durationMs: 88, status: "Success", startedAt: "2026-08-18T12:32:49Z" },
+    { traceId: "a0916d62a27d45f0b57f3c8e7272ab20", correlationId: "corr-10491-no", eventId: "evt-661ca0", operation: "Silver validation", durationMs: 512, status: "Error", startedAt: "2026-08-18T12:32:43Z" },
+    { traceId: "18e607d64b794c5fa171c647dd760718", correlationId: "corr-10455-fi", eventId: "evt-3c92fe", operation: "POST /api/v1/orders/events", durationMs: 176, status: "Success", startedAt: "2026-08-18T12:32:37Z" },
+  ],
+};
+
 export function createDemoNordicFlowApi(): NordicFlowApi {
   return {
     async getDashboardSummary() {
@@ -62,6 +83,9 @@ export function createDemoNordicFlowApi(): NordicFlowApi {
     },
     async getDataQuality() {
       return dataQuality;
+    },
+    async getObservability() {
+      return observability;
     },
   };
 }

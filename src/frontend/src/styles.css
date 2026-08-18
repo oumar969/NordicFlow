@@ -135,6 +135,25 @@ td small { color: #94a19d; font-size: 9px; text-transform: uppercase; }
 td code { padding: 4px 7px; color: #40544d; background: #f1f5f3; border-radius: 5px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 10px; }
 .status-pill.quality-critical { color: #983c46; background: #ffebed; }
 .status-pill.quality-warning { color: #8c621b; background: #fff1d5; }
+.service-health-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.service-card { display: grid; gap: 15px; padding: 18px; background: white; border: 1px solid #dfe5e1; border-radius: 12px; box-shadow: 0 6px 18px rgb(16 32 39 / 3%); }
+.service-card > div:first-child { display: flex; align-items: center; gap: 9px; font-size: 12px; }
+.health-dot { width: 8px; height: 8px; border-radius: 50%; background: #58b98a; }
+.health-dot.degraded { background: #d5a24a; }
+.health-dot.unavailable { background: #db6a71; }
+.service-card > .status-pill { width: max-content; }
+.service-card dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.service-card dl div { display: grid; gap: 4px; }
+.service-card dt { color: #83928d; font-size: 9px; }
+.service-card dd { margin: 0; color: #33464b; font-size: 11px; font-weight: 700; }
+.status-pill.service-healthy, .status-pill.trace-success { color: #28604a; background: #e4f3eb; }
+.status-pill.service-degraded { color: #8c621b; background: #fff1d5; }
+.status-pill.service-unavailable, .status-pill.trace-error { color: #983c46; background: #ffebed; }
+.trace-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 22px; border-bottom: 1px solid #e5ebe8; }
+.trace-heading label { width: min(320px, 45%); }
+.trace-heading input { width: 100%; padding: 10px 12px; background: #f8faf9; border: 1px solid #dbe3df; border-radius: 8px; font-size: 11px; }
+.latency-warning { color: #9b5c25; font-weight: 750; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @keyframes pulse { 50% { opacity: .45; } }
-@media (max-width: 1040px) { .metrics { grid-template-columns: repeat(2, 1fr); } .workspace-grid, .prediction-layout { grid-template-columns: 1fr; } .model-strip { grid-template-columns: repeat(2, 1fr); } .lineage-flow { align-items: stretch; flex-direction: column; } .lineage-step { width: 100%; flex-direction: column; align-items: stretch; } .lineage-step:last-child { width: 100%; } .lineage-step > i { text-align: center; transform: rotate(90deg); } .lineage-node { width: 100%; } }
-@media (max-width: 720px) { .app-shell { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 18px; } .brand { margin-bottom: 16px; } nav { grid-template-columns: repeat(2, 1fr); } .environment { margin-top: 16px; } main { padding: 26px 18px 40px; } .topbar { align-items: flex-start; } .user-chip div { display: none; } .metrics { grid-template-columns: 1fr; } .filter-bar { display: grid; } .filter-bar label:last-child { max-width: none; } .orders-table-wrap { overflow-x: auto; } table { min-width: 780px; } }
+@media (max-width: 1040px) { .metrics { grid-template-columns: repeat(2, 1fr); } .workspace-grid, .prediction-layout { grid-template-columns: 1fr; } .model-strip { grid-template-columns: repeat(2, 1fr); } .service-health-grid { grid-template-columns: repeat(2, 1fr); } .lineage-flow { align-items: stretch; flex-direction: column; } .lineage-step { width: 100%; flex-direction: column; align-items: stretch; } .lineage-step:last-child { width: 100%; } .lineage-step > i { text-align: center; transform: rotate(90deg); } .lineage-node { width: 100%; } }
+@media (max-width: 720px) { .app-shell { grid-template-columns: 1fr; } .sidebar { position: static; height: auto; padding: 18px; } .brand { margin-bottom: 16px; } nav { grid-template-columns: repeat(2, 1fr); } .environment { margin-top: 16px; } main { padding: 26px 18px 40px; } .topbar { align-items: flex-start; } .user-chip div { display: none; } .metrics, .service-health-grid { grid-template-columns: 1fr; } .filter-bar { display: grid; } .filter-bar label:last-child { max-width: none; } .trace-heading { align-items: stretch; flex-direction: column; } .trace-heading label { width: 100%; } .orders-table-wrap { overflow-x: auto; } table { min-width: 780px; } }
