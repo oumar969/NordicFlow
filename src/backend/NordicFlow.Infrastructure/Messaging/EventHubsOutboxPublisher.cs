@@ -44,6 +44,7 @@ internal sealed class EventHubsOutboxPublisher(
         activity?.SetTag("messaging.system", "azure_event_hubs");
         activity?.SetTag("messaging.message.id", message.Id);
         activity?.SetTag("nordicflow.correlation.id", message.CorrelationId);
+        activity?.SetTag("nordicflow.tenant.id", message.TenantId.ToString());
 
         var eventData = new EventData(BinaryData.FromString(message.Payload));
         eventData.Properties["eventId"] = message.Id.ToString();
@@ -73,4 +74,3 @@ internal sealed class EventHubsOutboxPublisher(
         }
     }
 }
-

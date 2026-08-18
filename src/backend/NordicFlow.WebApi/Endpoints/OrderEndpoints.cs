@@ -24,7 +24,7 @@ public static class OrderEndpoints
     {
         Activity.Current?.SetTag("nordicflow.event.id", request.EventId);
         Activity.Current?.SetTag("nordicflow.correlation.id", request.CorrelationId);
-        Activity.Current?.SetTag("nordicflow.tenant.id", request.TenantId);
+        Activity.Current?.SetTag("nordicflow.tenant.id", request.TenantId.ToString());
         Activity.Current?.SetTag("messaging.message.type", request.EventType);
 
         if (request.EventType != "nordicflow.order.created.v1" || request.SchemaVersion != 1)
