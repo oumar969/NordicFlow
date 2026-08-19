@@ -21,7 +21,7 @@ variables:
   node_type_id:
     default: Standard_D4ads_v5
   bootstrap_node_type_id:
-    default: Standard_D4ads_v5
+    default: Standard_D4s_v3
   postgres_host:
     description: Azure PostgreSQL hostname
   postgres_database:
@@ -50,6 +50,10 @@ resources:
             node_type_id: ${var.bootstrap_node_type_id}
             kind: CLASSIC_PREVIEW
             is_single_node: true
+            driver_node_type_flexibility:
+              alternate_node_type_ids:
+                - Standard_D4s_v4
+                - Standard_D4s_v5
             num_workers: 0
             data_security_mode: SINGLE_USER
       tasks:
