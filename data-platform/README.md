@@ -41,6 +41,8 @@ Run `postgres_bootstrap` once before enabling the Silver job. It uses the separa
 apply the canonical backend schema, transfer operational-table ownership to a NOLOGIN
 role, and grant only the required DML permissions. Remove the temporary PostgreSQL
 Entra administrator assignment immediately after a successful bootstrap run.
+The quarantine monitor is deployed paused and must remain paused until Bronze and
+Silver tables have been initialized and their first successful processing run exists.
 The PostgreSQL user must be an Entra database principal representing the Databricks
 workload identity, with INSERT/UPDATE/SELECT permissions limited to
 `data_quality_runs`, `data_lineage_stages`, `data_contract_violations`, `alert_rules`,
