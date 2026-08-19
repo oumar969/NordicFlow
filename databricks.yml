@@ -21,7 +21,7 @@ variables:
   node_type_id:
     default: Standard_D4ads_v5
   bootstrap_node_type_id:
-    default: Standard_DS3_v2
+    default: Standard_F4s_v2
   postgres_host:
     description: Azure PostgreSQL hostname
   postgres_database:
