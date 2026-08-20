@@ -21,6 +21,22 @@ describe("Dashboard", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("could not be loaded");
   });
 
+  it("renders the signed-in profile, supports logout, and hides ungranted navigation", async () => {
+    const onLogout = vi.fn();
+    const api: NordicFlowApi = {
+      getDashboardSummary: vi.fn().mockResolvedValue({ totalOrders: 0, highRiskOrders: 0, lowStockItems: 0, averageDelayProbability: 0, lastUpdatedAt: null }),
+      getDelayedOrders: vi.fn(), getInventory: vi.fn(), getPredictions: vi.fn(), getDataQuality: vi.fn(), getObservability: vi.fn(), getOperations: vi.fn(),
+    };
+    render(<Dashboard api={api} user={{ displayName: "Nora Jensen", roleLabel: "Operations.Reader", initials: "NJ", permissions: new Set(["operations:read"]), onLogout }} />);
+    expect(await screen.findByText("Nora Jensen")).toBeInTheDocument();
+    expect(screen.getByText("Operations.Reader")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Alerts & operations" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Observability" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Data quality" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+    expect(onLogout).toHaveBeenCalledOnce();
+  });
+
   it("opens and filters the delayed-order intervention queue", async () => {
     const api: NordicFlowApi = {
       getDashboardSummary: vi.fn().mockResolvedValue({ totalOrders: 2, highRiskOrders: 2, lowStockItems: 0, averageDelayProbability: 0.8, lastUpdatedAt: null }),

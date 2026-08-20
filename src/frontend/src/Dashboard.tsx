@@ -7,14 +7,29 @@ import { DataQuality } from "./DataQuality";
 import { Observability } from "./Observability";
 import { AlertsOperations } from "./AlertsOperations";
 
-interface DashboardProps { api: NordicFlowApi; }
+export interface DashboardUser {
+  displayName: string;
+  roleLabel: string;
+  initials: string;
+  permissions: ReadonlySet<string>;
+  onLogout?: () => void;
+}
+
+interface DashboardProps { api: NordicFlowApi; user?: DashboardUser; }
+
+const demoUser: DashboardUser = {
+  displayName: "Demo user",
+  roleLabel: "Development",
+  initials: "DU",
+  permissions: new Set(["data-quality:read", "observability:read", "operations:read"]),
+};
 
 const emptySummary: DashboardSummary = {
   totalOrders: 0, highRiskOrders: 0, lowStockItems: 0,
   averageDelayProbability: 0, lastUpdatedAt: null,
 };
 
-export function Dashboard({ api }: DashboardProps) {
+export function Dashboard({ api, user = demoUser }: DashboardProps) {
   const [summary, setSummary] = useState(emptySummary);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [page, setPage] = useState<"overview" | "orders" | "inventory" | "predictions" | "data-quality" | "observability" | "operations">("overview");
@@ -40,9 +55,9 @@ export function Dashboard({ api }: DashboardProps) {
           <button className={`nav-item ${page === "orders" ? "active" : ""}`} type="button" onClick={() => setPage("orders")}>Orders</button>
           <button className={`nav-item ${page === "inventory" ? "active" : ""}`} type="button" onClick={() => setPage("inventory")}>Inventory</button>
           <button className={`nav-item ${page === "predictions" ? "active" : ""}`} type="button" onClick={() => setPage("predictions")}>Predictions</button>
-          <button className={`nav-item ${page === "data-quality" ? "active" : ""}`} type="button" onClick={() => setPage("data-quality")}>Data quality</button>
-          <button className={`nav-item ${page === "observability" ? "active" : ""}`} type="button" onClick={() => setPage("observability")}>Observability</button>
-          <button className={`nav-item ${page === "operations" ? "active" : ""}`} type="button" onClick={() => setPage("operations")}>Alerts & operations</button>
+          {user.permissions.has("data-quality:read") && <button className={`nav-item ${page === "data-quality" ? "active" : ""}`} type="button" onClick={() => setPage("data-quality")}>Data quality</button>}
+          {user.permissions.has("observability:read") && <button className={`nav-item ${page === "observability" ? "active" : ""}`} type="button" onClick={() => setPage("observability")}>Observability</button>}
+          {user.permissions.has("operations:read") && <button className={`nav-item ${page === "operations" ? "active" : ""}`} type="button" onClick={() => setPage("operations")}>Alerts & operations</button>}
         </nav>
         <div className="environment"><span className="status-dot" />Development</div>
       </aside>
@@ -50,7 +65,11 @@ export function Dashboard({ api }: DashboardProps) {
         {page === "orders" ? <DelayedOrders api={api} onBack={() => setPage("overview")} /> : page === "inventory" ? <Inventory api={api} onBack={() => setPage("overview")} /> : page === "predictions" ? <Predictions api={api} onBack={() => setPage("overview")} /> : page === "data-quality" ? <DataQuality api={api} onBack={() => setPage("overview")} /> : page === "observability" ? <Observability api={api} onBack={() => setPage("overview")} /> : page === "operations" ? <AlertsOperations api={api} onBack={() => setPage("overview")} /> : <>
         <header className="topbar">
           <div><p className="eyebrow">Supply chain intelligence</p><h1>Control tower</h1></div>
-          <div className="user-chip" aria-label="Signed in user"><span>OA</span><div><strong>Omar Ammar</strong><small>Platform administrator</small></div></div>
+          <div className="user-chip" aria-label="Signed in user">
+            <span>{user.initials}</span>
+            <div><strong>{user.displayName}</strong><small>{user.roleLabel}</small></div>
+            {user.onLogout && <button type="button" onClick={user.onLogout}>Log out</button>}
+          </div>
         </header>
         {status === "error" && <div className="alert" role="alert">Dashboard data could not be loaded. Check the API connection and sign-in.</div>}
         <section className="metrics" aria-label="Operational summary">
