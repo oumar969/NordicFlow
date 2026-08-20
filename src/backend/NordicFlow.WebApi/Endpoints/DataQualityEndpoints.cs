@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using NordicFlow.Application.Abstractions;
 using NordicFlow.Application.DataQuality;
+using NordicFlow.WebApi.Security;
 
 namespace NordicFlow.WebApi.Endpoints;
 
@@ -19,8 +20,7 @@ public static class DataQualityEndpoints
         GetDataQualitySummaryHandler handler,
         CancellationToken cancellationToken)
     {
-        var tenantClaim = user.FindFirstValue("tenant_id");
-        if (!Guid.TryParse(tenantClaim, out var tenantId))
+        if (!user.TryGetTenantId(out var tenantId))
             return Results.Forbid();
         return Results.Ok(await handler.HandleAsync(tenantId, cancellationToken));
     }

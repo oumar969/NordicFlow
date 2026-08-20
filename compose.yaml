@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: nordicflow-postgres
+    environment:
+      POSTGRES_DB: nordicflow
+      POSTGRES_USER: nordicflow
+      POSTGRES_PASSWORD: local-only
+    ports:
+      - "5433:5432"
+    volumes:
+      - nordicflow-postgres-data:/var/lib/postgresql/data
+      - ./src/backend/NordicFlow.Infrastructure/Persistence/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+      - ./infra/local/seed-development.sql:/seed/seed-development.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nordicflow -d nordicflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  nordicflow-postgres-data:

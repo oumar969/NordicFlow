@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using NordicFlow.Application.Abstractions;
 using NordicFlow.Application.Observability;
+using NordicFlow.WebApi.Security;
 
 namespace NordicFlow.WebApi.Endpoints;
 
@@ -20,8 +21,7 @@ public static class ObservabilityEndpoints
         GetObservabilitySummaryHandler handler,
         CancellationToken cancellationToken)
     {
-        var tenantClaim = user.FindFirstValue("tenant_id");
-        if (!Guid.TryParse(tenantClaim, out var tenantId))
+        if (!user.TryGetTenantId(out var tenantId))
             return Results.Forbid();
 
         return Results.Ok(await handler.HandleAsync(tenantId, cancellationToken));

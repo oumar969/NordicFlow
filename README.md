@@ -17,6 +17,7 @@ databricks.yml              Databricks Asset Bundle monitoring job
 ## Quick start
 
 ```powershell
+docker compose up -d postgres
 dotnet restore src/backend/NordicFlow.slnx
 dotnet test src/backend/NordicFlow.slnx
 dotnet run --project src/backend/NordicFlow.WebApi
@@ -26,8 +27,11 @@ npm ci
 npm run dev
 ```
 
-The dashboard reads `VITE_API_BASE_URL` and expects an OIDC access token in
-`sessionStorage` under `nordicflow.access_token`. Its tenant-scoped overview is
+The dashboard reads `VITE_API_BASE_URL` and uses Microsoft Entra OIDC through
+MSAL. For non-demo environments configure `VITE_ENTRA_TENANT_ID`,
+`VITE_ENTRA_CLIENT_ID` and a comma-separated `VITE_API_SCOPES` list. The API
+allows only the origins listed under `Cors:AllowedOrigins`; production origins
+must therefore be supplied through configuration. Its tenant-scoped overview is
 served by `GET /api/v1/dashboard/summary` with the `dashboard:read` scope.
 
 POST `contracts/order-created/v1/example.json` to `/api/v1/orders/events`. Duplicate
